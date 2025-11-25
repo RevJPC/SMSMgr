@@ -1,0 +1,13 @@
+{
+  "name": "sms-backend",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for SMS Desktop",
+  "main": "worker.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "kv:create": "wrangler kv:namespace create SMS_METADATA"
+  },
+  "devDependencies": {
+    "wrangler": "^4.50.0"
+  }
+}

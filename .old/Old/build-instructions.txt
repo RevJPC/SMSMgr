@@ -1,0 +1,100 @@
+==================================================
+DRIVER SMS DESKTOP APP - BUILD INSTRUCTIONS
+==================================================
+
+STEP 1: Install Python
+-----------------------
+1. Go to https://www.python.org/downloads/
+2. Download Python 3.11 or newer for Windows
+3. Run the installer
+4. ✅ CHECK "Add Python to PATH" during installation
+5. Click "Install Now"
+
+STEP 2: Set Up the App
+-----------------------
+1. Create a new folder on your Desktop called "DriverSMS"
+2. Save these 3 files into that folder:
+   - driver_sms_app.py (the main code)
+   - requirements.txt
+   - BUILD_INSTRUCTIONS.txt (this file)
+
+STEP 3: Build the .exe
+-----------------------
+1. Open Command Prompt:
+   - Press Windows Key
+   - Type "cmd"
+   - Press Enter
+
+2. Navigate to your folder:
+   cd Desktop\DriverSMS
+
+3. Install required packages:
+   pip install -r requirements.txt
+
+4. Build the executable:
+   pyinstaller --onefile --windowed --name="DriverSMS" driver_sms_app.py
+
+5. Wait 2-3 minutes for build to complete
+
+STEP 4: Find Your App
+-----------------------
+1. Look in the "dist" folder inside DriverSMS
+2. You'll find: DriverSMS.exe
+3. Double-click to run!
+
+STEP 5: First Time Setup
+-----------------------
+1. Click "⚙️ Settings"
+2. Enter your Twilio credentials:
+   - Account SID
+   - Auth Token  
+   - Twilio Phone Number (format: +18778485669)
+3. Click "Save"
+
+4. Click "📁 Load Excel"
+5. Select your driver spreadsheet
+6. Done! You can now send bulk messages
+
+==================================================
+TROUBLESHOOTING
+==================================================
+
+Problem: "python is not recognized"
+Solution: Reinstall Python and check "Add to PATH"
+
+Problem: Build fails
+Solution: Run: pip install --upgrade pip setuptools wheel
+          Then try building again
+
+Problem: .exe won't run
+Solution: Windows Defender might block it
+          Right-click > Properties > Unblock
+
+Problem: Messages not sending
+Solution: Check your Twilio credentials in Settings
+          Make sure your number is verified
+
+==================================================
+FEATURES
+==================================================
+
+✅ Load drivers from Excel
+✅ Add individual contacts manually
+✅ Send bulk messages by team
+✅ View conversation history
+✅ Reply to individual drivers
+✅ Auto-refresh messages every 10 seconds
+✅ Search/filter drivers
+✅ Personalization: {firstName}, {name}, {team}
+
+==================================================
+SUPPORT
+==================================================
+
+If you have issues, check:
+1. Twilio credentials are correct
+2. Phone numbers are in format: +1XXXXXXXXXX
+3. Your Twilio number is verified and approved
+4. Excel file has columns: Full Name, Phone, Active Team, Active
+
+==================================================

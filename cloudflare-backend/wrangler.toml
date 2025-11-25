@@ -1,0 +1,9 @@
+name = "sms-backend"
+main = "worker.js"
+compatibility_date = "2023-10-25"
+
+# KV Namespace binding
+# You will need to replace the id with your actual KV namespace ID after creating it
+[[kv_namespaces]]
+binding = "SMS_METADATA"
+id = "656ec81b85834af28aaffa946b48cba7"

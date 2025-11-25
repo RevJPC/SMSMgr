@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Driver SMS">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white'>💬</text></svg>">
+    <title>Driver SMS Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --primary-light: #8b9cfc;
+            --primary-lighter: #c7d2fe;
+        }
+        
+        [data-theme="purple"] {
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --primary-light: #8b9cfc;
+            --primary-lighter: #c7d2fe;
+        }
+        
+        [data-theme="blue"] {
+            --gradient-start: #4facfe;
+            --gradient-end: #00f2fe;
+            --primary: #4facfe;
+            --primary-dark: #3d8fd9;
+            --primary-light: #7ec4ff;
+            --primary-lighter: #b3dbff;
+        }
+        
+        [data-theme="green"] {
+            --gradient-start: #43e97b;
+            --gradient-end: #38f9d7;
+            --primary: #43e97b;
+            --primary-dark: #37c767;
+            --primary-light: #6ef09a;
+            --primary-lighter: #a8f5c3;
+        }
+        
+        [data-theme="orange"] {
+            --gradient-start: #fa709a;
+            --gradient-end: #fee140;
+            --primary: #fa709a;
+            --primary-dark: #e35d87;
+            --primary-light: #fb93b2;
+            --primary-lighter: #fcc8d5;
+        }
+        
+        [data-theme="pink"] {
+            --gradient-start: #f093fb;
+            --gradient-end: #f5576c;
+            --primary: #f093fb;
+            --primary-dark: #d97fe6;
+            --primary-light: #f5b1fc;
+            --primary-lighter: #f9d4fd;
+        }
+        
+        [data-theme="dark"] {
+            --gradient-start: #2c3e50;
+            --gradient-end: #3498db;
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --primary-lighter: #aed6f1;
+        }
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        
+        .modern-button {
+            transition: all 0.3s ease;
+        }
+        
+        .modern-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .driver-card {
+            transition: all 0.3s ease;
+        }
+        
+        .driver-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .bg-primary {
+            background-color: var(--primary) !important;
+        }
+        
+        .bg-primary-dark {
+            background-color: var(--primary-dark) !important;
+        }
+        
+        .bg-primary-light {
+            background-color: var(--primary-light) !important;
+        }
+        
+        .bg-primary-lighter {
+            background-color: var(--primary-lighter) !important;
+        }
+        
+        .text-primary {
+            color: var(--primary) !important;
+        }
+        
+        .text-primary-dark {
+            color: var(--primary-dark) !important;
+        }
+        
+        .border-primary {
+            border-color: var(--primary) !important;
+        }
+        
+        .border-primary-light {
+            border-color: var(--primary-light) !important;
+        }
+        
+        .hover-primary:hover {
+            background-color: var(--primary-dark) !important;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="glass-card rounded-2xl p-6 mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">💬 Driver SMS Manager</h1>
+                <p class="text-gray-600 mt-1">Send bulk messages to your delivery team</p>
+            </div>
+            <button onclick="showSettings()" class="modern-button px-6 py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-800">
+                ⚙️ Settings
+            </button>
+        </div>
+
+        <!-- Upload Prompt (shows when no drivers loaded) -->
+        <div id="uploadPrompt" class="glass-card rounded-2xl p-8 text-center">
+            <div class="text-6xl mb-4">📋</div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Get Started</h2>
+            <p class="text-gray-600 mb-6">Upload your driver list to begin</p>
+            
+            <div class="border-2 border-dashed rounded-2xl p-8 hover:border-primary transition inline-block" style="border-color: var(--primary-light); background-color: rgba(var(--primary-rgb), 0.05);">
+                <label class="cursor-pointer">
+                    <span class="text-lg font-semibold text-primary hover-primary">
+                        📁 Choose Excel File
+                    </span>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden" onchange="handleFileUpload()">
+                </label>
+            </div>
+        </div>
+
+        <!-- Main Interface (hidden until drivers loaded) -->
+        <div id="mainInterface" class="hidden">
+            <div class="flex gap-6" style="height: calc(100vh - 200px);">
+                <!-- Left Column - Teams & Drivers -->
+                <div class="w-96 flex flex-col gap-4">
+                    <!-- Team Selection with Sort -->
+                    <div class="glass-card rounded-2xl p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h2 class="text-lg font-bold text-gray-800">🎯 Team</h2>
+                            <div class="flex gap-1">
+                                <button onclick="sortDrivers('recent')" id="sortRecentBtn" 
+                                        class="modern-button px-2 py-1 bg-indigo-600 text-white rounded text-xs">
+                                    Recent
+                                </button>
+                                <button onclick="sortDrivers('name')" id="sortNameBtn" 
+                                        class="modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                                    Name
+                                </button>
+                                <button onclick="sortDrivers('team')" id="sortTeamBtn" 
+                                        class="modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                                    Team
+                                </button>
+                            </div>
+                        </div>
+                        <select id="teamSelect" onchange="updateDriverList()" 
+                                class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm font-semibold">
+                        </select>
+                    </div>
+
+                    <!-- Bulk Message Button -->
+                    <button onclick="showBulkModal()" 
+                            class="modern-button w-full px-4 py-3 bg-primary text-white rounded-xl font-semibold hover-primary">
+                        📤 Send Bulk Message
+                    </button>
+
+                    <!-- Drivers List -->
+                    <div class="glass-card rounded-2xl p-4 flex-1 overflow-hidden flex flex-col">
+                        <h2 class="text-lg font-bold text-gray-800 mb-3">👥 Drivers</h2>
+                        <div id="driverList" class="space-y-2 overflow-y-auto flex-1"></div>
+                    </div>
+
+                    <!-- Version -->
+                    <div class="text-center">
+                        <p class="text-xs text-gray-400">v1.3.3</p>
+                    </div>
+                </div>
+
+                <!-- Right Column - Conversation & Results -->
+                <div class="flex-1 flex flex-col gap-4 overflow-hidden">
+                    <!-- Conversation View -->
+                    <div id="conversationView" class="glass-card rounded-2xl p-6 flex-1 flex-col overflow-hidden hidden">
+                        <div class="flex justify-between items-center mb-4 pb-4 border-b-2 flex-shrink-0">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-800" id="convName"></h2>
+                                <p class="text-sm text-gray-600" id="convPhone"></p>
+                            </div>
+                            <button onclick="closeConversation()" class="modern-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
+                                ✕ Close
+                            </button>
+                        </div>
+                        <div id="messageThread" class="bg-gray-50 rounded-xl p-4 mb-4 space-y-3 flex-1 overflow-y-auto" style="min-height: 0;"></div>
+                        <div class="flex gap-3 flex-shrink-0">
+                            <input type="text" id="replyInput" placeholder="Type your message..." 
+                                   class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl"
+                                   onkeypress="if(event.key==='Enter') sendReply()">
+                            <button onclick="sendReply()" class="modern-button px-6 py-3 bg-primary text-white rounded-xl font-semibold hover-primary">
+                                Send
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="glass-card rounded-2xl p-12 flex-1 flex flex-col items-center justify-center text-center">
+                        <div class="text-6xl mb-4">💬</div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Select a Driver</h3>
+                        <p class="text-gray-600">Click on any driver to start a conversation</p>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div id="resultsSection" class="glass-card rounded-2xl p-6 flex-1 flex flex-col hidden overflow-hidden">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">
+                            📊 Results: 
+                            <span class="text-green-600"><span id="successCount">0</span> sent</span>, 
+                            <span class="text-red-600"><span id="failCount">0</span> failed</span>
+                        </h2>
+                        <div id="resultsList" class="space-y-2 overflow-y-auto flex-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-card rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">⚙️ Settings</h2>
+                <button onclick="closeSettings()" class="text-gray-500 hover:text-gray-700 text-3xl">×</button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Account SID</label>
+                    <input type="text" id="accountSid" class="w-full px-4 py-3 border-2 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Auth Token</label>
+                    <input type="password" id="authToken" class="w-full px-4 py-3 border-2 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Twilio Phone Number</label>
+                    <input type="text" id="twilioNumber" placeholder="+1..." class="w-full px-4 py-3 border-2 rounded-xl">
+                </div>
+                
+                <!-- Notification Sound Picker -->
+                <div class="pt-4 border-t-2 border-gray-200">
+                    <label class="block text-sm font-semibold mb-2">🔔 Notification Sound</label>
+                    <div class="flex gap-2 mb-2">
+                        <select id="notificationSound" onchange="saveNotificationSound()" class="flex-1 px-4 py-3 border-2 rounded-xl">
+                            <option value="playTrill">Trill (Rising tone)</option>
+                            <option value="playBubble">Bubble (iMessage style)</option>
+                            <option value="playBeep">Beep (Simple)</option>
+                            <option value="playDoubleBeep">Double Beep</option>
+                            <option value="playChime">Chime (High pitch)</option>
+                            <option value="playDing">Ding (Bell)</option>
+                            <option value="playWhoosh">Whoosh</option>
+                            <option value="playPop">Pop (Quick)</option>
+                            <option value="playPluck">Pluck (Guitar)</option>
+                            <option value="playAlertTone">Alert (3 beeps)</option>
+                            <option value="playSoftPing">Soft Ping</option>
+                            <option value="playQuiet">Quiet (Subtle)</option>
+                            <option value="none">None (Silent)</option>
+                        </select>
+                        <button onclick="previewNotificationSound()" class="modern-button px-6 py-3 bg-primary-lighter text-primary-dark rounded-xl font-semibold" style="background-color: var(--primary-lighter); color: var(--primary-dark);">
+                            🔊 Preview
+                        </button>
+                    </div>
+                    <button onclick="testNotification()" class="w-full px-4 py-2 bg-green-100 text-green-700 rounded-xl font-medium hover:bg-green-200">
+                        🧪 Test Notification (simulates incoming message)
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">Click anywhere on the page first to enable audio in your browser</p>
+                </div>
+                
+                <!-- Color Theme Picker -->
+                <div class="pt-4 border-t-2 border-gray-200">
+                    <label class="block text-sm font-semibold mb-2">🎨 Color Theme</label>
+                    <select id="colorTheme" onchange="saveTheme()" class="w-full px-4 py-3 border-2 rounded-xl">
+                        <option value="purple">Purple (Default)</option>
+                        <option value="blue">Blue Ocean</option>
+                        <option value="green">Green Mint</option>
+                        <option value="orange">Orange Sunset</option>
+                        <option value="pink">Pink Rose</option>
+                        <option value="dark">Dark Mode</option>
+                    </select>
+                </div>
+                
+                <!-- Blacklist Management -->
+                <div class="pt-4 border-t-2 border-gray-200">
+                    <label class="block text-sm font-semibold mb-2">🚫 Blacklist (STOP Responses)</label>
+                    <div id="blacklistContainer" class="mb-2 max-h-32 overflow-y-auto bg-gray-50 rounded-xl p-3">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    <p class="text-xs text-gray-500">Drivers who replied "STOP" will be automatically blocked from bulk messages</p>
+                </div>
+                
+                <!-- Clear Driver List -->
+                <div class="pt-4 border-t-2 border-gray-200">
+                    <label class="block text-sm font-semibold mb-2">📋 Update Driver List</label>
+                    <label class="w-full px-4 py-2 bg-primary-lighter text-primary-dark rounded-xl font-medium cursor-pointer inline-block text-center" style="background-color: var(--primary-lighter); color: var(--primary-dark);">
+                        📁 Choose Excel File
+                        <input type="file" id="fileInput2" accept=".xlsx,.xls" class="hidden" onchange="handleFileUpload2()">
+                    </label>
+                    <p class="text-xs text-gray-500 mt-2">Upload a new driver list to replace the current one</p>
+                </div>
+                
+                <div class="pt-4 border-t-2 border-gray-200">
+                    <button onclick="clearDriverCache()" class="w-full px-4 py-2 bg-red-100 text-red-700 rounded-xl font-medium hover:bg-red-200">
+                        🗑️ Clear Saved Driver List
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">Clear cached driver data if you need to start fresh</p>
+                </div>
+            </div>
+            <button onclick="saveSettings()" class="w-full mt-6 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover-primary">
+                Save Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- Bulk Message Modal -->
+    <div id="bulkModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-card rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">📤 Send Bulk Message</h2>
+                <button onclick="closeBulkModal()" class="text-gray-500 hover:text-gray-700 text-3xl">×</button>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-semibold mb-2">Select Team</label>
+                <select id="bulkTeamSelect" onchange="updateBulkList()" class="w-full px-4 py-3 border-2 rounded-xl font-semibold"></select>
+            </div>
+
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-sm font-semibold">Select Drivers</label>
+                    <div class="flex gap-2">
+                        <button onclick="selectAllBulk()" class="text-sm font-medium text-primary">Select All</button>
+                        <button onclick="deselectAllBulk()" class="text-sm text-gray-600 font-medium">Deselect All</button>
+                    </div>
+                </div>
+                <p id="bulkCount" class="text-sm text-gray-600 mb-3"></p>
+                <div id="bulkDriverList" class="border-2 rounded-xl max-h-64 overflow-y-auto p-4 bg-gray-50"></div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold mb-2">Message</label>
+                <textarea id="bulkMessage" rows="5" class="w-full px-4 py-3 border-2 rounded-xl" oninput="updateBulkPreview()"></textarea>
+                <p class="text-sm text-gray-500 mt-2">Use: {firstName}, {name}, {team}</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold mb-2">✏️ Signature (optional)</label>
+                <input type="text" id="bulkSignature" placeholder="e.g., - Sent by Jamie" 
+                       class="w-full px-4 py-3 border-2 rounded-xl"
+                       oninput="updateBulkPreview()">
+                <p class="text-sm text-gray-500 mt-1">Add a signature to the end of each message. You can also use {firstName}, {name}, {team}</p>
+            </div>
+
+            <div id="bulkPreviewBox" class="mb-4 p-5 rounded-2xl border-4 shadow-lg hidden" style="background: linear-gradient(to right, var(--primary-lighter), var(--primary-lighter)); border-color: var(--primary-light);">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="text-2xl">📱</span>
+                    <p class="text-base font-bold" style="color: var(--primary-dark);">Live Preview</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm">
+                    <p id="bulkPreviewText" class="text-gray-900 whitespace-pre-wrap text-sm leading-relaxed"></p>
+                </div>
+                <p class="text-xs mt-2 font-medium" style="color: var(--primary-dark);">This is how the message will appear to the first selected driver</p>
+            </div>
+
+            <button onclick="sendBulk()" class="w-full px-6 py-4 bg-primary text-white rounded-xl font-bold text-lg hover-primary">
+                🚀 Send Messages
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let drivers = [];
+        let teams = [];
+        let conversations = {};
+        let currentDriver = null;
+        let sortBy = 'recent';
+        let sortReverse = false;
+        let selectedDriverIds = new Set();
+        let unreadDrivers = new Set();
+        let lastMessageCount = {};
+        let notificationSoundPreference = 'playTrill';
+        let blacklistedNumbers = new Set();
+        let currentTheme = 'purple';
+        let audioContextReady = false;
+
+        // Enable audio on first user interaction
+        function enableAudio() {
+            if (!audioContextReady) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    const ctx = new AudioContext();
+                    ctx.resume();
+                    audioContextReady = true;
+                    console.log('Audio context enabled');
+                } catch (e) {
+                    console.log('Could not enable audio context:', e);
+                }
+            }
+        }
+
+        // Add click listener to enable audio
+        document.addEventListener('click', enableAudio, { once: true });
+
+        window.onload = () => {
+            loadCredentials();
+            loadBlacklist();
+            loadTheme();
+            loadCachedDrivers();
+            loadCachedConversations();
+            setInterval(pollMessages, 15000);
+            registerServiceWorker();
+            requestNotificationPermission();
+        };
+
+        function requestNotificationPermission() {
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+        }
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('Service Worker registered');
+                }).catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+            }
+        }
+
+        function loadCredentials() {
+            document.getElementById('accountSid').value = localStorage.getItem('accountSid') || '';
+            document.getElementById('authToken').value = localStorage.getItem('authToken') || '';
+            document.getElementById('twilioNumber').value = localStorage.getItem('twilioNumber') || '';
+            
+            const savedSound = localStorage.getItem('notificationSound') || 'playTrill';
+            notificationSoundPreference = savedSound;
+            document.getElementById('notificationSound').value = savedSound;
+        }
+
+        function loadBlacklist() {
+            const saved = localStorage.getItem('blacklistedNumbers');
+            if (saved) {
+                blacklistedNumbers = new Set(JSON.parse(saved));
+                console.log(`Loaded ${blacklistedNumbers.size} blacklisted numbers`);
+            }
+        }
+
+        function saveBlacklist() {
+            localStorage.setItem('blacklistedNumbers', JSON.stringify([...blacklistedNumbers]));
+        }
+
+        function loadTheme() {
+            currentTheme = localStorage.getItem('colorTheme') || 'purple';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            if (document.getElementById('colorTheme')) {
+                document.getElementById('colorTheme').value = currentTheme;
+            }
+        }
+
+        function saveTheme() {
+            const theme = document.getElementById('colorTheme').value;
+            currentTheme = theme;
+            localStorage.setItem('colorTheme', theme);
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+
+        function loadCachedConversations() {
+            try {
+                const cached = localStorage.getItem('cachedConversations');
+                if (cached) {
+                    conversations = JSON.parse(cached);
+                    console.log(`Loaded cached conversations for ${Object.keys(conversations).length} numbers`);
+                    updateDriverList();
+                }
+            } catch (e) {
+                console.error('Error loading cached conversations:', e);
+            }
+        }
+
+        function saveCachedConversations() {
+            try {
+                localStorage.setItem('cachedConversations', JSON.stringify(conversations));
+            } catch (e) {
+                console.error('Error saving conversations:', e);
+            }
+        }
+
+        function saveNotificationSound() {
+            const sound = document.getElementById('notificationSound').value;
+            notificationSoundPreference = sound;
+            localStorage.setItem('notificationSound', sound);
+        }
+
+        function previewNotificationSound() {
+            enableAudio(); // Make sure audio is enabled
+            const sound = document.getElementById('notificationSound').value;
+            if (sound === 'none') {
+                alert('Silent mode - no sound will play');
+            } else {
+                console.log('Previewing sound:', sound);
+                try {
+                    window[sound]();
+                } catch (e) {
+                    console.error('Error previewing sound:', e);
+                    alert('Error playing sound. Check browser console.');
+                }
+            }
+        }
+
+        function testNotification() {
+            enableAudio(); // Make sure audio is enabled
+            console.log('Testing notification...');
+            console.log('Current sound preference:', notificationSoundPreference);
+            
+            // Play sound
+            playNotificationSound();
+            
+            // Show browser notification if permitted
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("Test Message", {
+                    body: "This is a test notification with sound",
+                    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23667eea'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white'>💬</text></svg>"
+                });
+            } else {
+                alert('✅ Sound should have played!\n\n(Browser notifications not enabled, but sound should work)');
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem('accountSid', document.getElementById('accountSid').value);
+            localStorage.setItem('authToken', document.getElementById('authToken').value);
+            localStorage.setItem('twilioNumber', document.getElementById('twilioNumber').value);
+            closeSettings();
+            alert('✅ Settings saved!');
+        }
+
+        function showSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+            updateBlacklistDisplay();
+        }
+
+        function updateBlacklistDisplay() {
+            const container = document.getElementById('blacklistContainer');
+            if (blacklistedNumbers.size === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-400 italic">No blacklisted numbers</p>';
+            } else {
+                container.innerHTML = [...blacklistedNumbers].map(phone => {
+                    const driver = drivers.find(d => d.phone === phone);
+                    const name = driver ? driver.name : phone;
+                    return `
+                        <div class="flex justify-between items-center p-2 bg-white rounded-lg mb-1">
+                            <span class="text-sm">${name} (${phone})</span>
+                            <button onclick="removeFromBlacklist('${phone}')" class="text-xs text-red-600 hover:text-red-800 font-medium">
+                                Remove
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function removeFromBlacklist(phone) {
+            if (confirm('Remove this number from blacklist? They will be able to receive messages again.')) {
+                blacklistedNumbers.delete(phone);
+                saveBlacklist();
+                updateBlacklistDisplay();
+                updateDriverList();
+            }
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function handleFileUpload() {
+            processFile(document.getElementById('fileInput').files[0]);
+        }
+
+        function handleFileUpload2() {
+            processFile(document.getElementById('fileInput2').files[0]);
+            closeSettings();
+        }
+
+        function processFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+                    
+                    drivers = json
+                        .filter(row => {
+                            // Must have a phone number
+                            if (!row['Phone']) return false;
+                            
+                            // Must be active (explicitly "Yes", not "No" or empty)
+                            const activeStatus = row['Active'] ? row['Active'].toString().trim().toLowerCase() : '';
+                            return activeStatus === 'yes';
+                        })
+                        .map((row, i) => ({
+                            id: i,
+                            name: row['Full Name'] || '',
+                            firstName: (row['Full Name'] || '').split(' ')[0],
+                            phone: row['Phone'] || '',
+                            team: row['Active Team'] || ''
+                        }));
+
+                    teams = ['all', ...new Set(drivers.map(d => d.team).filter(Boolean))].sort();
+                    
+                    saveDriversToCache();
+                    
+                    const teamSelect = document.getElementById('teamSelect');
+                    teamSelect.innerHTML = teams.map(t => {
+                        const count = t === 'all' ? drivers.length : drivers.filter(d => d.team === t).length;
+                        return `<option value="${t}">${t === 'all' ? '🌍 All Teams' : t} (${count})</option>`;
+                    }).join('');
+                    
+                    // Default to "all" teams
+                    teamSelect.value = 'all';
+
+                    document.getElementById('uploadPrompt').classList.add('hidden');
+                    document.getElementById('mainInterface').classList.remove('hidden');
+                    updateDriverList();
+                    alert(`✅ Loaded ${drivers.length} drivers`);
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function saveDriversToCache() {
+            try {
+                localStorage.setItem('cachedDrivers', JSON.stringify(drivers));
+                localStorage.setItem('cachedTeams', JSON.stringify(teams));
+                localStorage.setItem('driversLastUpdated', new Date().toISOString());
+            } catch (e) {
+                console.log('Could not cache drivers:', e);
+            }
+        }
+
+        function loadCachedDrivers() {
+            try {
+                const cachedDrivers = localStorage.getItem('cachedDrivers');
+                const cachedTeams = localStorage.getItem('cachedTeams');
+                const lastUpdated = localStorage.getItem('driversLastUpdated');
+                
+                console.log('Checking for cached drivers...', cachedDrivers ? 'Found' : 'Not found');
+                
+                if (cachedDrivers && cachedTeams) {
+                    drivers = JSON.parse(cachedDrivers);
+                    teams = JSON.parse(cachedTeams);
+                    
+                    console.log(`Loaded ${drivers.length} cached drivers`);
+                    
+                    if (drivers.length > 0) {
+                        const teamSelect = document.getElementById('teamSelect');
+                        if (teamSelect) {
+                            teamSelect.innerHTML = teams.map(t => {
+                                const count = t === 'all' ? drivers.length : drivers.filter(d => d.team === t).length;
+                                return `<option value="${t}">${t === 'all' ? '🌍 All Teams' : t} (${count})</option>`;
+                            }).join('');
+                            
+                            // Default to "all" teams
+                            teamSelect.value = 'all';
+
+                            document.getElementById('uploadPrompt').classList.add('hidden');
+                            document.getElementById('mainInterface').classList.remove('hidden');
+                            updateDriverList();
+                            
+                            if (lastUpdated) {
+                                const date = new Date(lastUpdated);
+                                console.log(`Driver list loaded (last updated: ${date.toLocaleString()})`);
+                            }
+                        }
+                    }
+                } else {
+                    console.log('No cached drivers found - showing upload screen');
+                }
+            } catch (e) {
+                console.error('Error loading cached drivers:', e);
+            }
+        }
+
+        function clearDriverCache() {
+            if (confirm('Clear saved driver list? You will need to upload again.')) {
+                localStorage.removeItem('cachedDrivers');
+                localStorage.removeItem('cachedTeams');
+                localStorage.removeItem('driversLastUpdated');
+                drivers = [];
+                teams = [];
+                document.getElementById('uploadPrompt').classList.remove('hidden');
+                document.getElementById('mainInterface').classList.add('hidden');
+                alert('Driver list cleared');
+            }
+        }
+
+        function sortDrivers(type) {
+            if (sortBy === type) {
+                sortReverse = !sortReverse;
+            } else {
+                sortBy = type;
+                sortReverse = false;
+            }
+            
+            // Update button states
+            document.getElementById('sortRecentBtn').className = type === 'recent' 
+                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
+                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
+            document.getElementById('sortNameBtn').className = type === 'name' 
+                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
+                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
+            document.getElementById('sortTeamBtn').className = type === 'team'
+                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
+                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
+            
+            updateDriverList();
+        }
+
+        function getLastMessageTime(phone) {
+            const msgs = conversations[phone] || [];
+            if (msgs.length === 0) return 0;
+            
+            const lastMsg = msgs.reduce((latest, msg) => {
+                const msgTime = msg.timestamp ? new Date(msg.timestamp).getTime() : 0;
+                const latestTime = latest.timestamp ? new Date(latest.timestamp).getTime() : 0;
+                return msgTime > latestTime ? msg : latest;
+            }, msgs[0]);
+            
+            return lastMsg.timestamp ? new Date(lastMsg.timestamp).getTime() : 0;
+        }
+
+        function getLastMessagePreview(phone) {
+            const msgs = conversations[phone] || [];
+            if (msgs.length === 0) return { text: 'No messages yet', time: '' };
+            
+            const lastMsg = msgs.reduce((latest, msg) => {
+                const msgTime = msg.timestamp ? new Date(msg.timestamp).getTime() : 0;
+                const latestTime = latest.timestamp ? new Date(latest.timestamp).getTime() : 0;
+                return msgTime > latestTime ? msg : latest;
+            }, msgs[0]);
+            
+            const preview = lastMsg.body.length > 40 ? lastMsg.body.substring(0, 40) + '...' : lastMsg.body;
+            const timeStr = formatMessageTime(lastMsg.timestamp);
+            const isOutbound = lastMsg.direction === 'outbound-api';
+            
+            return { 
+                text: (isOutbound ? 'You: ' : '') + preview, 
+                time: timeStr,
+                isOutbound: isOutbound
+            };
+        }
+
+        function formatMessageTime(timestamp) {
+            if (!timestamp) return '';
+            
+            const msgDate = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - msgDate;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            
+            return msgDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function updateDriverList() {
+            const team = document.getElementById('teamSelect').value;
+            let filtered = team === 'all' ? [...drivers] : drivers.filter(d => d.team === team);
+            
+            // Sort based on selected option
+            filtered.sort((a, b) => {
+                // ALWAYS prioritize unread messages first
+                const aUnread = unreadDrivers.has(a.phone);
+                const bUnread = unreadDrivers.has(b.phone);
+                
+                if (aUnread && !bUnread) return -1;
+                if (!aUnread && bUnread) return 1;
+                
+                // Then sort by selected criteria
+                let val;
+                if (sortBy === 'recent') {
+                    const timeA = getLastMessageTime(a.phone);
+                    const timeB = getLastMessageTime(b.phone);
+                    val = timeB - timeA; // Most recent first
+                } else if (sortBy === 'name') {
+                    val = a.name.localeCompare(b.name);
+                } else { // team
+                    val = a.team.localeCompare(b.team);
+                }
+                return sortReverse ? -val : val;
+            });
+
+            document.getElementById('driverList').innerHTML = filtered.map(d => {
+                const hasUnread = unreadDrivers.has(d.phone);
+                const isBlacklisted = blacklistedNumbers.has(d.phone);
+                const preview = getLastMessagePreview(d.phone);
+                
+                const borderStyle = hasUnread ? `border: 2px solid var(--primary);` : '';
+                
+                return `
+                    <div class="driver-card p-3 bg-white rounded-lg cursor-pointer ${isBlacklisted ? 'opacity-50' : ''}"
+                         style="${borderStyle}"
+                         onclick='openConversation(${JSON.stringify(d)})'>
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="font-semibold text-gray-900 text-sm truncate flex-1">${d.name}</div>
+                            <div class="flex gap-1">
+                                ${hasUnread ? '<span class="text-xl">💬</span>' : ''}
+                                ${isBlacklisted ? '<span class="text-sm">🚫</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 truncate mb-1">${d.team}</div>
+                        ${sortBy === 'recent' ? `
+                            <div class="text-xs ${preview.text === 'No messages yet' ? 'text-gray-400 italic' : 'text-gray-600'} truncate">
+                                ${preview.text}
+                            </div>
+                            ${preview.time ? `<div class="text-xs text-gray-400 mt-1">${preview.time}</div>` : ''}
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function openConversation(driver) {
+            currentDriver = driver;
+            document.getElementById('convName').textContent = driver.name;
+            document.getElementById('convPhone').textContent = driver.phone;
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('conversationView').classList.remove('hidden');
+            document.getElementById('conversationView').classList.add('flex');
+            document.getElementById('resultsSection').classList.add('hidden');
+            
+            unreadDrivers.delete(driver.phone);
+            updateDriverList();
+            
+            // Show cached messages immediately if available
+            if (conversations[driver.phone] && conversations[driver.phone].length > 0) {
+                displayMessages();
+            } else {
+                // Show loading state
+                const thread = document.getElementById('messageThread');
+                thread.innerHTML = '<div class="text-center text-gray-500 text-sm"><div class="animate-pulse">Loading conversation history...</div></div>';
+            }
+            
+            // Fetch latest from Twilio in background
+            await fetchConversationHistory(driver.phone);
+            
+            displayMessages();
+        }
+
+        async function fetchConversationHistory(phone) {
+            const sid = document.getElementById('accountSid').value;
+            const token = document.getElementById('authToken').value;
+            const twilioNumber = document.getElementById('twilioNumber').value;
+            
+            if (!sid || !token) {
+                console.log('No credentials configured');
+                return;
+            }
+
+            try {
+                let allMessages = [];
+                let pageUrl = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json?PageSize=100`;
+                
+                // Fetch all pages of messages for this conversation
+                while (pageUrl) {
+                    const res = await fetch(pageUrl, {
+                        headers: { 'Authorization': 'Basic ' + btoa(sid + ':' + token) }
+                    });
+
+                    if (!res.ok) {
+                        console.error('Failed to fetch messages:', res.status);
+                        break;
+                    }
+
+                    const data = await res.json();
+                    
+                    // Filter messages for this specific phone number
+                    const relevantMessages = data.messages.filter(m => {
+                        const msgPhone = m.direction === 'inbound' ? m.from : m.to;
+                        return msgPhone === phone;
+                    });
+                    
+                    allMessages = allMessages.concat(relevantMessages);
+                    
+                    // Check if we have enough messages for this conversation or if there are more pages
+                    // Stop if we have at least 50 messages for this conversation
+                    if (relevantMessages.length > 0 && allMessages.length >= 50) {
+                        break;
+                    }
+                    
+                    // Get next page URL if available
+                    pageUrl = data.next_page_uri ? `https://api.twilio.com${data.next_page_uri}` : null;
+                    
+                    // Safety limit: stop after 5 pages (500 messages checked)
+                    if (!pageUrl || allMessages.length >= 100) {
+                        break;
+                    }
+                }
+
+                // Store messages in conversations object
+                if (!conversations[phone]) {
+                    conversations[phone] = [];
+                }
+
+                // Add new messages that don't already exist
+                allMessages.forEach(m => {
+                    if (!conversations[phone].find(x => x.sid === m.sid)) {
+                        conversations[phone].push({ 
+                            sid: m.sid, 
+                            body: m.body, 
+                            direction: m.direction,
+                            timestamp: m.date_created
+                        });
+                        
+                        // Check for STOP message
+                        if (m.direction === 'inbound' && m.body.trim().toUpperCase() === 'STOP') {
+                            blacklistedNumbers.add(phone);
+                            saveBlacklist();
+                            console.log(`Added ${phone} to blacklist`);
+                        }
+                    }
+                });
+
+                // Save to cache
+                saveCachedConversations();
+
+                console.log(`Loaded ${allMessages.length} messages for ${phone}`);
+                
+            } catch (err) {
+                console.error('Error fetching conversation history:', err);
+            }
+        }
+
+        function closeConversation() {
+            currentDriver = null;
+            document.getElementById('conversationView').classList.add('hidden');
+            document.getElementById('conversationView').classList.remove('flex');
+            document.getElementById('emptyState').classList.remove('hidden');
+        }
+
+        function displayMessages() {
+            const thread = document.getElementById('messageThread');
+            const msgs = conversations[currentDriver.phone] || [];
+            
+            if (msgs.length === 0) {
+                thread.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages yet</p>';
+                return;
+            }
+
+            const sortedMsgs = [...msgs].sort((a, b) => {
+                const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+                const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+                return timeA - timeB;
+            });
+
+            thread.innerHTML = sortedMsgs.map(m => {
+                const isSent = m.direction === 'outbound-api';
+                const bubbleStyle = isSent ? `background-color: var(--primary); color: white;` : '';
+                return `
+                    <div class="flex ${isSent ? 'justify-end' : 'justify-start'}">
+                        <div class="${isSent ? 'text-white' : 'bg-white border-2'} rounded-2xl px-4 py-2 max-w-md" style="${bubbleStyle}">
+                            ${m.body}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            thread.scrollTop = thread.scrollHeight;
+        }
+
+        async function sendReply() {
+            const msg = document.getElementById('replyInput').value.trim();
+            if (!msg || !currentDriver) return;
+
+            const sid = document.getElementById('accountSid').value;
+            const token = document.getElementById('authToken').value;
+            const from = document.getElementById('twilioNumber').value;
+
+            if (!sid || !token || !from) {
+                alert('Configure Twilio settings first');
+                showSettings();
+                return;
+            }
+
+            try {
+                const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Basic ' + btoa(sid + ':' + token)
+                    },
+                    body: new URLSearchParams({ To: currentDriver.phone, From: from, Body: msg })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!conversations[currentDriver.phone]) conversations[currentDriver.phone] = [];
+                    if (!conversations[currentDriver.phone].find(m => m.sid === data.sid)) {
+                        conversations[currentDriver.phone].push({ 
+                            sid: data.sid,
+                            body: msg, 
+                            direction: 'outbound-api',
+                            timestamp: data.date_created || new Date().toISOString()
+                        });
+                    }
+                    document.getElementById('replyInput').value = '';
+                    displayMessages();
+                    updateDriverList();
+                } else {
+                    alert('Failed to send');
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        async function pollMessages() {
+            const sid = document.getElementById('accountSid').value;
+            const token = document.getElementById('authToken').value;
+            if (!sid || !token || drivers.length === 0) return;
+
+            try {
+                // Only fetch recent messages (last 100) to check for new activity
+                const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json?PageSize=100`, {
+                    headers: { 'Authorization': 'Basic ' + btoa(sid + ':' + token) }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    let hasNewMessages = false;
+                    
+                    data.messages.forEach(m => {
+                        const phone = m.direction === 'inbound' ? m.from : m.to;
+                        
+                        if (!conversations[phone]) {
+                            conversations[phone] = [];
+                            lastMessageCount[phone] = 0;
+                        }
+                        
+                        // Check if message already exists
+                        if (!conversations[phone].find(x => x.sid === m.sid)) {
+                            conversations[phone].push({ 
+                                sid: m.sid, 
+                                body: m.body, 
+                                direction: m.direction,
+                                timestamp: m.date_created
+                            });
+                            
+                            // Check for STOP message
+                            if (m.direction === 'inbound' && m.body.trim().toUpperCase() === 'STOP') {
+                                blacklistedNumbers.add(phone);
+                                saveBlacklist();
+                                console.log(`Added ${phone} to blacklist via poll`);
+                                updateDriverList();
+                            }
+                            
+                            // If it's an inbound message and not from current open conversation
+                            if (m.direction === 'inbound' && (!currentDriver || currentDriver.phone !== phone)) {
+                                unreadDrivers.add(phone);
+                                hasNewMessages = true;
+                                
+                                console.log('New inbound message detected from:', phone);
+                                
+                                // Find driver name for notification
+                                const driver = drivers.find(d => d.phone === phone);
+                                if (driver) {
+                                    showNotification(driver.name, m.body);
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Save conversations to cache
+                    saveCachedConversations();
+                    
+                    if (hasNewMessages) {
+                        console.log('Playing notification sound for new messages');
+                        playNotificationSound();
+                    }
+                    
+                    if (currentDriver) displayMessages();
+                    updateDriverList();
+                }
+            } catch (err) {
+                console.error('Poll error:', err);
+            }
+        }
+
+        function showNotification(driverName, messageText) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(`New message from ${driverName}`, {
+                    body: messageText.substring(0, 100),
+                    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>💬</text></svg>"
+                });
+            }
+        }
+
+        function playNotificationSound() {
+            if (notificationSoundPreference === 'none') {
+                return;
+            }
+            
+            console.log('Playing notification sound:', notificationSoundPreference);
+            
+            if (typeof window[notificationSoundPreference] === 'function') {
+                try {
+                    window[notificationSoundPreference]();
+                } catch (e) {
+                    console.error('Error playing sound:', e);
+                }
+            } else {
+                console.error('Sound function not found:', notificationSoundPreference);
+                playTrill(); // Fallback to default
+            }
+        }
+
+        function playBeep() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playTrill() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.2);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playDing() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 2000;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playWhoosh() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(1500, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.15);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.15);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playPop() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'square';
+                
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.08);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.08);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playPluck() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 330;
+                oscillator.type = 'triangle';
+                
+                gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playAlertTone() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                [0, 0.15, 0.3].forEach((delay, i) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.frequency.value = 1000;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.25, audioContext.currentTime + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + delay + 0.1);
+                    osc.start(audioContext.currentTime + delay);
+                    osc.stop(audioContext.currentTime + delay + 0.1);
+                });
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playSoftPing() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 880;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.4);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playDoubleBeep() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                osc1.frequency.value = 800;
+                osc1.type = 'sine';
+                gain1.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                osc1.start(audioContext.currentTime);
+                osc1.stop(audioContext.currentTime + 0.1);
+                
+                const osc2 = audioContext.createOscillator();
+                const gain2 = audioContext.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioContext.destination);
+                osc2.frequency.value = 1000;
+                osc2.type = 'sine';
+                gain2.gain.setValueAtTime(0.3, audioContext.currentTime + 0.15);
+                gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+                osc2.start(audioContext.currentTime + 0.15);
+                osc2.stop(audioContext.currentTime + 0.25);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playChime() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 1200;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.4);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playBubble() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.15);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playQuiet() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 440;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function showBulkModal() {
+            console.log('showBulkModal called');
+            console.log('Drivers loaded:', drivers.length);
+            console.log('Teams:', teams);
+            
+            if (drivers.length === 0) {
+                alert('Please load drivers first!');
+                return;
+            }
+            
+            const select = document.getElementById('bulkTeamSelect');
+            if (!select) {
+                console.error('bulkTeamSelect not found!');
+                return;
+            }
+            
+            select.innerHTML = teams.map(t => {
+                const count = t === 'all' ? drivers.length : drivers.filter(d => d.team === t).length;
+                return `<option value="${t}">${t === 'all' ? '🌍 All Teams' : t} (${count})</option>`;
+            }).join('');
+            
+            updateBulkList();
+            
+            const modal = document.getElementById('bulkModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                console.log('Modal opened');
+            } else {
+                console.error('bulkModal element not found!');
+            }
+            
+            setTimeout(() => updateBulkPreview(), 100);
+        }
+
+        function closeBulkModal() {
+            document.getElementById('bulkModal').classList.add('hidden');
+        }
+
+        function updateBulkList() {
+            const team = document.getElementById('bulkTeamSelect').value;
+            const filtered = team === 'all' ? drivers : drivers.filter(d => d.team === team);
+            
+            selectedDriverIds.clear();
+            filtered.forEach(d => selectedDriverIds.add(d.id));
+
+            document.getElementById('bulkDriverList').innerHTML = filtered.map(d => `
+                <div class="flex items-center p-2 mb-2 bg-white rounded-lg">
+                    <input type="checkbox" id="bulk-${d.id}" checked onchange="toggleBulk(${d.id})" class="w-5 h-5">
+                    <label for="bulk-${d.id}" class="ml-3 flex-1 cursor-pointer text-sm">
+                        <div class="font-medium">${d.name}</div>
+                        <div class="text-xs text-gray-500">${d.phone}</div>
+                    </label>
+                </div>
+            `).join('');
+
+            updateBulkCount();
+            updateBulkPreview();
+        }
+
+        function toggleBulk(id) {
+            if (selectedDriverIds.has(id)) {
+                selectedDriverIds.delete(id);
+            } else {
+                selectedDriverIds.add(id);
+            }
+            updateBulkCount();
+            updateBulkPreview();
+        }
+
+        function selectAllBulk() {
+            const team = document.getElementById('bulkTeamSelect').value;
+            const filtered = team === 'all' ? drivers : drivers.filter(d => d.team === team);
+            filtered.forEach(d => {
+                selectedDriverIds.add(d.id);
+                const cb = document.getElementById(`bulk-${d.id}`);
+                if (cb) cb.checked = true;
+            });
+            updateBulkCount();
+            updateBulkPreview();
+        }
+
+        function deselectAllBulk() {
+            const team = document.getElementById('bulkTeamSelect').value;
+            const filtered = team === 'all' ? drivers : drivers.filter(d => d.team === team);
+            filtered.forEach(d => {
+                selectedDriverIds.delete(d.id);
+                const cb = document.getElementById(`bulk-${d.id}`);
+                if (cb) cb.checked = false;
+            });
+            updateBulkCount();
+            updateBulkPreview();
+        }
+
+        function updateBulkCount() {
+            const count = selectedDriverIds.size;
+            document.getElementById('bulkCount').textContent = `${count} selected • Est. $${(count * 0.0079).toFixed(2)}`;
+        }
+
+        function updateBulkPreview() {
+            const msg = document.getElementById('bulkMessage').value.trim();
+            const signature = document.getElementById('bulkSignature').value.trim();
+            const previewBox = document.getElementById('bulkPreviewBox');
+            const previewText = document.getElementById('bulkPreviewText');
+            
+            if (!msg) {
+                previewBox.classList.add('hidden');
+                return;
+            }
+            
+            const firstSelectedId = Array.from(selectedDriverIds)[0];
+            const firstDriver = drivers.find(d => d.id === firstSelectedId);
+            
+            if (!firstDriver) {
+                previewBox.classList.add('hidden');
+                return;
+            }
+            
+            let personalizedMsg = msg.replace(/{firstName}/g, firstDriver.firstName)
+                                    .replace(/{name}/g, firstDriver.name)
+                                    .replace(/{team}/g, firstDriver.team);
+            
+            if (signature) {
+                const personalizedSig = signature.replace(/{firstName}/g, firstDriver.firstName)
+                                                .replace(/{name}/g, firstDriver.name)
+                                                .replace(/{team}/g, firstDriver.team);
+                personalizedMsg += '\n\n' + personalizedSig;
+            }
+            
+            previewText.textContent = personalizedMsg;
+            previewBox.classList.remove('hidden');
+        }
+
+        async function sendBulk() {
+            const msg = document.getElementById('bulkMessage').value.trim();
+            const signature = document.getElementById('bulkSignature').value.trim();
+            const sid = document.getElementById('accountSid').value;
+            const token = document.getElementById('authToken').value;
+            const from = document.getElementById('twilioNumber').value;
+
+            if (!sid || !token || !from) {
+                alert('Configure settings first');
+                showSettings();
+                return;
+            }
+
+            if (!msg) {
+                alert('Enter a message');
+                return;
+            }
+
+            let selected = drivers.filter(d => selectedDriverIds.has(d.id));
+            
+            // Filter out blacklisted numbers
+            const blacklisted = selected.filter(d => blacklistedNumbers.has(d.phone));
+            selected = selected.filter(d => !blacklistedNumbers.has(d.phone));
+            
+            if (selected.length === 0) {
+                alert('No drivers selected or all selected drivers are blacklisted');
+                return;
+            }
+            
+            let confirmMsg = `Send to ${selected.length} drivers?\nCost: ~${(selected.length * 0.0079).toFixed(2)}`;
+            if (blacklisted.length > 0) {
+                confirmMsg += `\n\n⚠️ ${blacklisted.length} blacklisted driver(s) will be skipped:\n${blacklisted.map(d => d.name).join(', ')}`;
+            }
+            
+            if (!confirm(confirmMsg)) return;
+
+            closeBulkModal();
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('conversationView').classList.add('hidden');
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('resultsList').innerHTML = '';
+
+            let success = 0, fail = 0;
+
+            // Show skipped drivers
+            if (blacklisted.length > 0) {
+                blacklisted.forEach(d => {
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'p-4 rounded-xl bg-gray-100 border-2 border-gray-300';
+                    resultDiv.innerHTML = `<span class="text-2xl">🚫</span> <strong>${d.name}</strong> - Skipped (Blacklisted)`;
+                    document.getElementById('resultsList').appendChild(resultDiv);
+                });
+            }
+
+            for (const d of selected) {
+                let personalizedMsg = msg.replace(/{firstName}/g, d.firstName)
+                                        .replace(/{name}/g, d.name)
+                                        .replace(/{team}/g, d.team);
+                
+                if (signature) {
+                    const personalizedSig = signature.replace(/{firstName}/g, d.firstName)
+                                                    .replace(/{name}/g, d.name)
+                                                    .replace(/{team}/g, d.team);
+                    personalizedMsg += '\n\n' + personalizedSig;
+                }
+
+                try {
+                    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Authorization': 'Basic ' + btoa(sid + ':' + token)
+                        },
+                        body: new URLSearchParams({ To: d.phone, From: from, Body: personalizedMsg })
+                    });
+
+                    const resultDiv = document.createElement('div');
+                    if (res.ok) {
+                        success++;
+                        resultDiv.className = 'p-4 rounded-xl bg-green-50 border-2 border-green-200';
+                        resultDiv.innerHTML = `<span class="text-2xl">✅</span> <strong>${d.name}</strong> - Sent`;
+                        
+                        const responseData = await res.json();
+                        if (!conversations[d.phone]) conversations[d.phone] = [];
+                        if (!conversations[d.phone].find(m => m.sid === responseData.sid)) {
+                            conversations[d.phone].push({ 
+                                sid: responseData.sid,
+                                body: personalizedMsg, 
+                                direction: 'outbound-api',
+                                timestamp: responseData.date_created || new Date().toISOString()
+                            });
+                        }
+                    } else {
+                        fail++;
+                        resultDiv.className = 'p-4 rounded-xl bg-red-50 border-2 border-red-200';
+                        resultDiv.innerHTML = `<span class="text-2xl">❌</span> <strong>${d.name}</strong> - Failed`;
+                    }
+                    document.getElementById('resultsList').appendChild(resultDiv);
+                } catch (err) {
+                    fail++;
+                }
+
+                document.getElementById('successCount').textContent = success;
+                document.getElementById('failCount').textContent = fail;
+                await new Promise(r => setTimeout(r, 100));
+            }
+
+            // Save conversations to cache
+            saveCachedConversations();
+
+            updateDriverList();
+            alert(`Complete!\n${success} sent, ${fail} failed${blacklisted.length > 0 ? `, ${blacklisted.length} skipped (blacklisted)` : ''}`);
+        }
+    </script>
+</body>
+</html>
