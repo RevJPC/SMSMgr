@@ -337,7 +337,7 @@ export default {
         const currentUser = await authenticate(request);
         if (!currentUser) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
 
-        const { to, body, mediaUrl } = await request.json();
+        const { to, body, mediaUrl, isBulk } = await request.json();
 
         // Get credentials
         const settingsJson = await env.SMS_METADATA.get('SMS_SETTINGS');
@@ -388,7 +388,8 @@ export default {
 
         await env.SMS_METADATA.put(twilioData.sid, JSON.stringify({
           user: currentUser,
-          color: userColor
+          color: userColor,
+          isBulk: !!isBulk
         }));
 
         return new Response(JSON.stringify(twilioData), {

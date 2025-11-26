@@ -363,6 +363,11 @@
                                     class="modern-button px-2 py-1 bg-indigo-600 text-white rounded text-xs">
                                     Recent
                                 </button>
+                                <button onclick="sortDrivers('myRecent')" id="sortMyRecentBtn"
+                                    class="modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
+                                    title="Show drivers I messaged recently">
+                                    My Recent
+                                </button>
                                 <button onclick="sortDrivers('name')" id="sortNameBtn"
                                     class="modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
                                     Name
@@ -372,6 +377,14 @@
                                     Team
                                 </button>
                             </div>
+                        </div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <label class="flex items-center gap-2 text-xs font-semibold text-gray-600 cursor-pointer">
+                                <input type="checkbox" id="hideBulkToggle"
+                                    onchange="displayMessages(); updateDriverList();"
+                                    class="rounded text-primary focus:ring-primary">
+                                Hide Bulk Messages
+                            </label>
                         </div>
                         <select id="teamSelect" onchange="updateDriverList()"
                             class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm font-semibold">
@@ -853,12 +866,13 @@
         let teams = [];
         let conversations = {};
         let currentDriver = null;
-        let sortBy = 'recent';
+        let sortBy = 'recent'; // 'recent', 'team', 'myRecent'
         let sortReverse = false;
         let users = [];
         let currentUser = null;
         let currentUserRole = 'User';
         let currentUserColor = '#667eea';
+        let globalCompanyName = ''; // Store global company name
         let selectedDriverIds = new Set();
         let unreadDrivers = new Set();
         let lastMessageCount = {};
@@ -1016,6 +1030,7 @@
                             if (settingsRes.ok) {
                                 const settingsData = await settingsRes.json();
                                 if (settingsData.company) {
+                                    globalCompanyName = settingsData.company; // Store globally
                                     updateHeaderTitle(settingsData.company);
                                 }
                             }
@@ -1342,6 +1357,7 @@
                     if (data.number) document.getElementById('twilioNumber').value = data.number;
                     if (data.company) {
                         document.getElementById('companyNameSettings').value = data.company;
+                        globalCompanyName = data.company; // Store globally
                         updateHeaderTitle(data.company);
                     }
                 }
@@ -1714,37 +1730,53 @@
 
         function sortDrivers(type) {
             if (sortBy === type) {
-                sortReverse = !sortReverse;
+                // If clicking same sort, toggle reverse (except for 'recent' which usually stays desc)
+                // Actually let's just keep it simple: clicking 'recent' always resets to standard recent
+                if (type !== 'recent' && type !== 'myRecent') sortReverse = !sortReverse;
             } else {
                 sortBy = type;
                 sortReverse = false;
             }
 
-            // Update button states
-            document.getElementById('sortRecentBtn').className = type === 'recent'
-                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
-                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
-            document.getElementById('sortNameBtn').className = type === 'name'
-                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
-                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
-            document.getElementById('sortTeamBtn').className = type === 'team'
-                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
-                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
+            // Update buttons
+            ['recent', 'name', 'team', 'myRecent'].forEach(t => {
+                const btn = document.getElementById(`sort${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
+                if (btn) {
+                    if (t === sortBy) {
+                        btn.classList.remove('bg-gray-200', 'text-gray-700');
+                        btn.classList.add('bg-indigo-600', 'text-white');
+                    } else {
+                        btn.classList.add('bg-gray-200', 'text-gray-700');
+                        btn.classList.remove('bg-indigo-600', 'text-white');
+                    }
+                }
+            });
 
             updateDriverList();
         }
 
         function getLastMessageTime(phone) {
-            const msgs = conversations[phone] || [];
-            if (msgs.length === 0) return 0;
+            const msgs = conversations[phone];
+            if (!msgs || msgs.length === 0) return 0;
+            // Use the last message regardless of sender
+            const last = msgs[msgs.length - 1];
+            return last.timestamp ? new Date(last.timestamp).getTime() : 0;
+        }
 
-            const lastMsg = msgs.reduce((latest, msg) => {
-                const msgTime = msg.timestamp ? new Date(msg.timestamp).getTime() : 0;
-                const latestTime = latest.timestamp ? new Date(latest.timestamp).getTime() : 0;
-                return msgTime > latestTime ? msg : latest;
-            }, msgs[0]);
+        function getLastMyMessageTime(phone) {
+            const msgs = conversations[phone];
+            if (!msgs || msgs.length === 0) return 0;
 
-            return lastMsg.timestamp ? new Date(lastMsg.timestamp).getTime() : 0;
+            // Find last message sent by current user
+            // We check senderName against currentUser
+            // Note: senderName might be null for old messages, so this only works for new/synced ones
+            for (let i = msgs.length - 1; i >= 0; i--) {
+                const m = msgs[i];
+                if (m.direction === 'outbound-api' && m.senderName === currentUser) {
+                    return m.timestamp ? new Date(m.timestamp).getTime() : 0;
+                }
+            }
+            return 0;
         }
 
         function getLastMessagePreview(phone) {
@@ -1807,18 +1839,22 @@
                 if (aUnread && !bUnread) return -1;
                 if (!aUnread && bUnread) return 1;
 
-                // Then sort by selected criteria
-                let val;
-                if (sortBy === 'recent') {
+                // Sort
+                if (sortBy === 'team') {
+                    return a.team.localeCompare(b.team);
+                } else if (sortBy === 'myRecent') {
+                    // Sort by last message sent by CURRENT USER
+                    const timeA = getLastMyMessageTime(a.phone);
+                    const timeB = getLastMyMessageTime(b.phone);
+                    return timeB - timeA;
+                } else if (sortBy === 'name') {
+                    return a.name.localeCompare(b.name);
+                } else {
+                    // Recent (default)
                     const timeA = getLastMessageTime(a.phone);
                     const timeB = getLastMessageTime(b.phone);
-                    val = timeB - timeA; // Most recent first
-                } else if (sortBy === 'name') {
-                    val = a.name.localeCompare(b.name);
-                } else { // team
-                    val = a.team.localeCompare(b.team);
+                    return timeB - timeA;
                 }
-                return sortReverse ? -val : val;
             });
 
             document.getElementById('driverList').innerHTML = filtered.map(d => {
@@ -1840,7 +1876,7 @@
                             </div>
                         </div>
                         <div class="text-xs text-gray-500 truncate mb-1">${d.team}</div>
-                        ${sortBy === 'recent' ? `
+                        ${sortBy === 'recent' || sortBy === 'myRecent' ? `
                             <div class="text-xs ${preview.text === 'No messages yet' ? 'text-gray-400 italic' : 'text-gray-600'} truncate">
                                 ${preview.text}
                             </div>
@@ -1914,6 +1950,7 @@
                         if (metaData[m.sid]) {
                             m.senderName = metaData[m.sid].user;
                             m.senderColor = metaData[m.sid].color;
+                            m.isBulk = metaData[m.sid].isBulk; // Load bulk flag
                         }
                     });
                 }
@@ -1983,7 +2020,8 @@
                         timestamp: m.date_created,
                         media: mediaUrls,
                         senderName: m.senderName,
-                        senderColor: m.senderColor
+                        senderColor: m.senderColor,
+                        isBulk: m.isBulk // Persist bulk flag
                     });
 
                     // Check for STOP message
@@ -2066,13 +2104,25 @@
             if (!targetDriver) return;
 
             const msgs = conversations[targetDriver.phone] || [];
+            const hideBulk = document.getElementById('hideBulkToggle')?.checked;
 
             if (msgs.length === 0) {
                 thread.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages yet</p>';
                 return;
             }
 
-            const sortedMsgs = [...msgs].sort((a, b) => {
+            // Filter messages if needed
+            let displayMsgs = msgs;
+            if (hideBulk) {
+                displayMsgs = msgs.filter(m => !m.isBulk);
+            }
+
+            if (displayMsgs.length === 0) {
+                thread.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages (Bulk hidden)</p>';
+                return;
+            }
+
+            const sortedMsgs = [...displayMsgs].sort((a, b) => {
                 const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
                 const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
                 return timeA - timeB;
@@ -2144,6 +2194,7 @@
                         </div>
                         <div class="flex items-center gap-2 mt-1 px-2">
                             ${isSent && m.senderName ? `<span class="text-xs font-medium text-gray-500">${m.senderName}</span>` : ''}
+                            ${m.isBulk ? `<span class="text-xs font-bold text-blue-500 bg-blue-50 px-1 rounded">BULK</span>` : ''}
                             ${timestamp ? `<span class="text-xs text-gray-400">${timestamp}</span>` : ''}
                         </div>
                     </div>
@@ -2313,9 +2364,7 @@
                                     // Fetch the media subresource for this message
                                     // Note: Media fetching still requires direct Twilio access for now, or a separate proxy.
                                     // But since we don't have credentials in frontend, we might need to skip this or implement /api/media
-                                    // For now, let's skip fetching media list details if we don't have credentials, 
-                                    // or we can try to fetch it via a new backend endpoint if needed.
-                                    // Actually, let's just log that we found media but can't fetch details yet without a proxy.
+                                    // For now, let's just log that we found media but can't fetch details yet without a proxy.
                                     console.log('Media detected. Fetching media details via proxy is not yet implemented.');
 
                                     /* 
@@ -2930,10 +2979,14 @@
             const user = users.find(u => u.username === username);
             if (!user) return '- ' + username;
 
-            let sigLines = ['- ' + username];
-            if (user.role && user.role !== 'User') sigLines.push(user.role);
-            if (user.company) sigLines.push(user.company);
-            return sigLines.join('\n');
+            let parts = [username];
+            if (user.role && user.role !== 'User') parts.push(user.role);
+
+            // Use user's company or fallback to global company name
+            const company = user.company || globalCompanyName;
+            if (company) parts.push(company);
+
+            return '- ' + parts.join(', ');
         }
 
         async function saveSettings() {
@@ -3087,7 +3140,8 @@
                         },
                         body: JSON.stringify({
                             to: d.phone,
-                            body: personalizedMsg
+                            body: personalizedMsg,
+                            isBulk: true // Flag as bulk
                         })
                     });
 
@@ -3108,7 +3162,8 @@
                                 direction: 'outbound-api',
                                 timestamp: responseData.date_created || new Date().toISOString(),
                                 senderName: currentUser,
-                                senderColor: currentUserColor || '#667eea'
+                                senderColor: currentUserColor || '#667eea',
+                                isBulk: true
                             });
                         }
                     } else {
@@ -3329,6 +3384,11 @@
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', () => {
             // checkSavedLogin(); // No longer needed with new auth
+
+            // Load users if authenticated (to get company info for signatures)
+            if (sessionStorage.getItem('auth')) {
+                loadUsers();
+            }
         });
     </script>
 </body>
