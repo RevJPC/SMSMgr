@@ -545,8 +545,15 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold mb-2">Twilio Phone Number</label>
-                            <input type="text" id="twilioNumber" placeholder="+1..."
+                            <input type="text" id="twilioNumber" placeholder="+1234567890"
                                 class="w-full px-4 py-3 border-2 rounded-xl" disabled>
+                        </div>
+                        <div class="col-span-2">
+                            <button type="button" onclick="testConnection()" id="testConnectionBtn"
+                                class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition text-sm">
+                                🔌 Test Connection
+                            </button>
+                            <p id="testConnectionResult" class="text-xs text-center mt-2 hidden"></p>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold mb-2">Company Name</label>
@@ -1840,21 +1847,25 @@
                 if (!aUnread && bUnread) return 1;
 
                 // Sort
+                // Sort
+                let comparison = 0;
                 if (sortBy === 'team') {
-                    return a.team.localeCompare(b.team);
+                    comparison = a.team.localeCompare(b.team);
                 } else if (sortBy === 'myRecent') {
                     // Sort by last message sent by CURRENT USER
                     const timeA = getLastMyMessageTime(a.phone);
                     const timeB = getLastMyMessageTime(b.phone);
-                    return timeB - timeA;
+                    comparison = timeB - timeA;
                 } else if (sortBy === 'name') {
-                    return a.name.localeCompare(b.name);
+                    comparison = a.name.localeCompare(b.name);
                 } else {
                     // Recent (default)
                     const timeA = getLastMessageTime(a.phone);
                     const timeB = getLastMessageTime(b.phone);
-                    return timeB - timeA;
+                    comparison = timeB - timeA;
                 }
+
+                return sortReverse ? -comparison : comparison;
             });
 
             document.getElementById('driverList').innerHTML = filtered.map(d => {
@@ -3042,6 +3053,53 @@
             }
 
             closeSettings();
+        }
+
+        async function testConnection() {
+            const sid = document.getElementById('accountSid').value.trim();
+            const token = document.getElementById('authToken').value.trim();
+            const btn = document.getElementById('testConnectionBtn');
+            const result = document.getElementById('testConnectionResult');
+
+            if (!sid || !token) {
+                alert('Please enter SID and Token first');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Testing...';
+            result.classList.add('hidden');
+
+            try {
+                const auth = sessionStorage.getItem('auth');
+                const res = await fetch(`${BACKEND_URL}/api/test-connection`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${auth}`
+                    },
+                    body: JSON.stringify({ sid, token })
+                });
+
+                const data = await res.json();
+
+                result.classList.remove('hidden');
+                if (data.success) {
+                    result.innerHTML = `<span class="text-green-600 font-bold">✅ Success! Connected to: ${data.accountName}</span>`;
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+                    btn.classList.add('bg-green-100', 'text-green-700');
+                } else {
+                    result.innerHTML = `<span class="text-red-600 font-bold">❌ Failed: ${data.error}</span>`;
+                    btn.classList.remove('bg-green-100', 'text-green-700');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                }
+            } catch (e) {
+                result.classList.remove('hidden');
+                result.innerHTML = `<span class="text-red-600 font-bold">❌ Error: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔌 Test Connection';
+            }
         }
 
         function updateHeaderTitle(company) {

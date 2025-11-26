@@ -335,19 +335,19 @@ export default {
       // 6. Send Message Proxy
       if (url.pathname === '/api/send-message' && method === 'POST') {
         const currentUser = await authenticate(request);
-        if (!currentUser) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+        if (!currentUser) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
         const { to, body, mediaUrl, isBulk } = await request.json();
 
         // Get credentials
         const settingsJson = await env.SMS_METADATA.get('SMS_SETTINGS');
         if (!settingsJson) {
-          return new Response('System not configured', { status: 500, headers: corsHeaders });
+          return new Response(JSON.stringify({ error: 'System not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
         const { sid, token, number } = JSON.parse(settingsJson);
 
         if (!sid || !token || !number) {
-          return new Response('Missing Twilio configuration', { status: 500, headers: corsHeaders });
+          return new Response(JSON.stringify({ error: 'Missing Twilio configuration' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
 
         // Prepare Twilio request
@@ -374,7 +374,11 @@ export default {
         const twilioData = await twilioRes.json();
 
         if (!twilioRes.ok) {
-          return new Response(JSON.stringify({ error: twilioData.message || 'Twilio Error' }), {
+          let errorMsg = twilioData.message || 'Twilio Error';
+          if (twilioRes.status === 401) {
+            errorMsg = 'Twilio Authentication Failed - Check Settings';
+          }
+          return new Response(JSON.stringify({ error: errorMsg }), {
             status: twilioRes.status,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
@@ -428,6 +432,40 @@ export default {
 
         const data = await twilioRes.json();
         return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 8. Test Connection Endpoint
+      if (url.pathname === '/api/test-connection' && method === 'POST') {
+        const currentUser = await authenticate(request);
+        if (!currentUser) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+        const { sid, token } = await request.json();
+
+        if (!sid || !token) {
+          return new Response(JSON.stringify({ error: 'Missing SID or Token' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        const cleanSid = String(sid).trim();
+        const cleanToken = String(token).trim();
+        const authHeader = 'Basic ' + base64Encode(`${cleanSid}:${cleanToken}`);
+
+        // Fetch account details (lightweight check)
+        const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${cleanSid}.json`, {
+          headers: { 'Authorization': authHeader }
+        });
+
+        const data = await twilioRes.json();
+
+        if (!twilioRes.ok) {
+          return new Response(JSON.stringify({ success: false, error: data.message || 'Authentication Failed' }), {
+            status: 200, // Return 200 so frontend can parse the error easily
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        return new Response(JSON.stringify({ success: true, accountName: data.friendly_name }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
