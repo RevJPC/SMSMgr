@@ -30,25 +30,22 @@ Write-Host ""
 
 Set-Location ..
 
-Write-Host "🌐 Step 2: Deploying Frontend to Cloudflare Pages..." -ForegroundColor Yellow
-Write-Host ""
-
-Set-Location frontend-dist
-
-# Deploy to Pages
-Write-Host "Deploying to Cloudflare Pages..." -ForegroundColor Gray
-Copy-Item "guide.html" -Destination "frontend-dist/guide.html" -Force
-Copy-Item "twilio-sms-2.2.0.html" -Destination "frontend-dist/index.html" -Force
-Copy-Item "screenshots" -Destination "frontend-dist/" -Recurse -Force
-npx wrangler pages deploy . --project-name=sms-manager
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Pages deployment failed!" -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "✅ Frontend deployed successfully!" -ForegroundColor Green
-Write-Host ""
+# Write-Host "🌐 Step 2: Deploying Frontend to Cloudflare Pages..." -ForegroundColor Yellow
+# Write-Host ""
+# 
+# # Set-Location frontend-dist
+# 
+# # Deploy to Pages
+# # Write-Host "Deploying to Cloudflare Pages..." -ForegroundColor Gray
+# # npx wrangler pages deploy . --project-name=sms-manager
+# 
+# # if ($LASTEXITCODE -ne 0) {
+# #     Write-Host "❌ Pages deployment failed!" -ForegroundColor Red
+# #     exit 1
+# # }
+# 
+# Write-Host "✅ Frontend deployment skipped (managed via Git/Pages)" -ForegroundColor Green
+# Write-Host ""
 
 Set-Location ..
 

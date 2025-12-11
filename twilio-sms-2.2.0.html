@@ -932,6 +932,21 @@
         console.log('Backend URL:', BACKEND_URL);
         console.log('Tenant:', TENANT);
 
+        // Wrapper for fetch to include Tenant ID
+        const apiFetch = async (endpoint, options = {}) => {
+            const headers = options.headers || {};
+            if (!(headers instanceof Headers)) {
+                // Ensure headers is an object
+                options.headers = {
+                    ...headers,
+                    'X-Tenant-ID': TENANT
+                };
+            } else {
+                headers.set('X-Tenant-ID', TENANT);
+            }
+            return fetch(endpoint, options);
+        };
+
 
         function handleSearch() {
             const query = document.getElementById('driverSearch').value.toLowerCase().trim();
@@ -1028,7 +1043,7 @@
 
             try {
                 // 1. Verify Token & Get Username
-                const res = await fetch(`${BACKEND_URL}/api/me`, {
+                const res = await apiFetch(`${BACKEND_URL}/api/me`, {
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
 
@@ -1047,7 +1062,7 @@
 
                         // 2. Fetch User Details (Color, Role, Company)
                         try {
-                            const userRes = await fetch(`${BACKEND_URL}/api/users`, {
+                            const userRes = await apiFetch(`${BACKEND_URL}/api/users`, {
                                 headers: { 'Authorization': `Basic ${auth}` }
                             });
                             if (userRes.ok) {
@@ -1070,7 +1085,7 @@
 
                         // 3. Load company name from settings
                         try {
-                            const settingsRes = await fetch(`${BACKEND_URL}/api/settings`, {
+                            const settingsRes = await apiFetch(`${BACKEND_URL}/api/settings`, {
                                 headers: { 'Authorization': `Basic ${auth}` }
                             });
                             if (settingsRes.ok) {
@@ -1124,7 +1139,7 @@
             const auth = btoa(`${user}:${pass}`);
 
             try {
-                const res = await fetch(`${BACKEND_URL}/api/me`, {
+                const res = await apiFetch(`${BACKEND_URL}/api/me`, {
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
 
@@ -1448,7 +1463,7 @@
 
                 console.log(`Syncing ${count} messages...`);
 
-                const res = await fetch(`${BACKEND_URL}/api/meta/batch`, {
+                const res = await apiFetch(`${BACKEND_URL}/api/meta/batch`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1989,7 +2004,7 @@
             if (!sids) return;
 
             try {
-                const metaRes = await fetch(`${BACKEND_URL}/api/meta?sids=${sids}`, {
+                const metaRes = await apiFetch(`${BACKEND_URL}/api/meta?sids=${sids}`, {
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
 
@@ -2016,10 +2031,10 @@
             try {
                 // Optimization: Fetch inbound and outbound messages in parallel using Backend Proxy
                 const [inboundRes, outboundRes] = await Promise.all([
-                    fetch(`${BACKEND_URL}/api/messages?PageSize=50&From=${encodeURIComponent(phone)}`, {
+                    apiFetch(`${BACKEND_URL}/api/messages?PageSize=50&From=${encodeURIComponent(phone)}`, {
                         headers: { 'Authorization': `Basic ${auth}` }
                     }),
-                    fetch(`${BACKEND_URL}/api/messages?PageSize=50&To=${encodeURIComponent(phone)}`, {
+                    apiFetch(`${BACKEND_URL}/api/messages?PageSize=50&To=${encodeURIComponent(phone)}`, {
                         headers: { 'Authorization': `Basic ${auth}` }
                     })
                 ]);
@@ -2285,7 +2300,7 @@
                 }
 
                 // Use backend proxy
-                const res = await fetch(`${BACKEND_URL}/api/send-message`, {
+                const res = await apiFetch(`${BACKEND_URL}/api/send-message`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2380,7 +2395,7 @@
             try {
                 // Only fetch recent messages (last 100) to check for new activity
                 // Use backend proxy
-                const res = await fetch(`${BACKEND_URL}/api/messages?PageSize=100`, {
+                const res = await apiFetch(`${BACKEND_URL}/api/messages?PageSize=100`, {
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
 
