@@ -431,6 +431,11 @@
                                 <h2 class="text-xl font-bold text-gray-800" id="convName"></h2>
                                 <p class="text-sm text-gray-600" id="convPhone"></p>
                             </div>
+                            <button onclick="initiateCall()"
+                                class="modern-button px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 mr-2"
+                                title="Call this customer">
+                                📞 Call
+                            </button>
                             <button onclick="closeConversation()"
                                 class="modern-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
                                 ✕ Close
@@ -890,8 +895,33 @@
         let audioContextReady = false;
         let selectedImage = null;
         let searchQuery = '';
-        // TODO: Replace with your actual Cloudflare Worker URL after deployment
-        const BACKEND_URL = 'https://sms-backend.jamie-381.workers.dev';
+
+        // Backend API URL - automatically detects environment
+        const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
+            ? 'http://127.0.0.1:8787'  // Local development
+            : 'https://sms-backend.jamiececil.workers.dev'; // Production
+
+        // Get tenant from subdomain for multi-tenancy
+        const getTenant = () => {
+            const hostname = window.location.hostname;
+            const parts = hostname.split('.');
+
+            // Handle test.toc.smsmgr.com -> returns 'toc'
+            if (parts[0] === 'test' && parts.length > 3) {
+                return parts[1];
+            }
+
+            // If subdomain exists (e.g., toc.smsmgr.com), return 'toc'
+            if (parts.length > 2 && parts[0] !== 'www') {
+                return parts[0];
+            }
+            return 'default';
+        };
+
+        const TENANT = getTenant();
+        console.log('Environment:', window.location.hostname);
+        console.log('Backend URL:', BACKEND_URL);
+        console.log('Tenant:', TENANT);
 
 
         function handleSearch() {
@@ -3439,6 +3469,81 @@
                 btn.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
             }
         }
+        // ========== CALL FUNCTIONS ==========
+
+        function initiateCall() {
+            const phone = document.getElementById('convPhone').textContent;
+            const name = document.getElementById('convName').textContent;
+
+            if (!phone) return;
+
+            document.getElementById('callCustomerName').textContent = name;
+            document.getElementById('callCustomerNumber').textContent = phone;
+
+            // Load saved number
+            const savedNum = localStorage.getItem('my_personal_number');
+            if (savedNum) {
+                document.getElementById('myPhoneNumber').value = savedNum;
+            }
+
+            document.getElementById('callModal').classList.remove('hidden');
+            // Focus input if empty
+            if (!savedNum) {
+                setTimeout(() => document.getElementById('myPhoneNumber').focus(), 100);
+            }
+        }
+
+        function closeCallModal() {
+            document.getElementById('callModal').classList.add('hidden');
+        }
+
+        async function performCall() {
+            const myPhone = document.getElementById('myPhoneNumber').value.trim();
+            const customerPhone = document.getElementById('callCustomerNumber').textContent.trim();
+
+            if (!myPhone) {
+                alert('Please enter your phone number');
+                return;
+            }
+
+            // Save for next time
+            localStorage.setItem('my_personal_number', myPhone);
+
+            const btn = document.getElementById('performCallBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Calling you...';
+
+            try {
+                const auth = sessionStorage.getItem('auth');
+                const res = await fetch(`${BACKEND_URL}/api/make-call`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${auth}`
+                    },
+                    body: JSON.stringify({
+                        userPhone: myPhone,
+                        customerPhone: customerPhone
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('✅ Call initiated! Pick up your phone.');
+                    closeCallModal();
+                } else {
+                    alert('❌ Call Failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('❌ Error: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', () => {
             // checkSavedLogin(); // No longer needed with new auth
@@ -3449,6 +3554,38 @@
             }
         });
     </script>
+    <!-- Call Modal -->
+    <div id="callModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="glass-card rounded-2xl p-6 max-w-md w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">📞 Make a Call</h2>
+                <button onclick="closeCallModal()" class="text-gray-500 hover:text-gray-700 text-3xl">×</button>
+            </div>
+
+            <div class="text-center mb-6">
+                <p class="text-gray-600 mb-2">Calling <span id="callCustomerName" class="font-bold"></span></p>
+                <p class="text-2xl font-bold text-gray-800 mb-4" id="callCustomerNumber"></p>
+                <div class="p-4 bg-yellow-50 rounded-xl border border-yellow-200 text-sm text-yellow-800 text-left">
+                    <p class="font-bold mb-1">How this works:</p>
+                    1. We will call your phone number first.<br>
+                    2. When you answer, we'll bridge you to the customer.<br>
+                    3. The customer will see the business number.
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-semibold mb-2">Your Phone Number</label>
+                <input type="tel" id="myPhoneNumber" placeholder="+1..."
+                    class="w-full px-4 py-3 border-2 rounded-xl text-lg text-center font-mono">
+                <p class="text-xs text-gray-500 mt-1 text-center">Saved for next time</p>
+            </div>
+
+            <button onclick="performCall()" id="performCallBtn"
+                class="w-full px-6 py-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 transition flex items-center justify-center gap-2">
+                <span>📞</span> Place Call
+            </button>
+        </div>
+    </div>
 </body>
 
 </html>
