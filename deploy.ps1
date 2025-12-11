@@ -39,6 +39,7 @@ Set-Location frontend-dist
 Write-Host "Deploying to Cloudflare Pages..." -ForegroundColor Gray
 Copy-Item "guide.html" -Destination "frontend-dist/guide.html" -Force
 Copy-Item "twilio-sms-2.2.0.html" -Destination "frontend-dist/index.html" -Force
+Copy-Item "screenshots" -Destination "frontend-dist/" -Recurse -Force
 npx wrangler pages deploy . --project-name=sms-manager
 
 if ($LASTEXITCODE -ne 0) {
