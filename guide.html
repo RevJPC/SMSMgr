@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Manager - User Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --primary: #667eea;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            min-height: 100vh;
+            color: #4a5568;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2d3748;
+        }
+
+        h2 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        p,
+        ul,
+        ol {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+        }
+
+        ol {
+            list-style-type: decimal;
+            padding-left: 1.5rem;
+        }
+
+        code {
+            background-color: #edf2f7;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+            color: #d53f8c;
+        }
+
+        .modern-button {
+            transition: all 0.2s;
+        }
+
+        .modern-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body class="p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="glass-card rounded-2xl p-6 mb-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="text-4xl">📚</div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">SMS Manager User Guide</h1>
+                    <p class="text-gray-600 text-sm">Comprehensive documentation for dispatchers & supervisors</p>
+                </div>
+            </div>
+            <a href="index.html"
+                class="modern-button px-6 py-3 bg-gray-800 text-white rounded-xl font-semibold hover:bg-gray-900 no-underline">
+                🔙 Back to App
+            </a>
+        </div>
+
+        <!-- Content -->
+        <div class="glass-card rounded-2xl p-8 mb-6">
+            <div class="prose max-w-none text-gray-700">
+                <p class="lead text-lg mb-6">Welcome to the <strong>SMSMgr (Driver SMS Manager)</strong>! This
+                    application is designed to help dispatchers and supervisors efficiently communicate with their
+                    driver teams via SMS.</p>
+
+                <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-8 rounded-r-lg">
+                    <p class="font-bold text-indigo-700 m-0">Table of Contents</p>
+                    <ul class="mt-2 mb-0 text-sm grid grid-cols-1 md:grid-cols-2 gap-2 list-none pl-0">
+                        <li><a href="#getting-started" class="text-indigo-600 hover:underline">1. Getting Started</a>
+                        </li>
+                        <li><a href="#dashboard-overview" class="text-indigo-600 hover:underline">2. Dashboard
+                                Overview</a></li>
+                        <li><a href="#managing-drivers" class="text-indigo-600 hover:underline">3. Managing Drivers</a>
+                        </li>
+                        <li><a href="#sending-messages" class="text-indigo-600 hover:underline">4. Sending Messages</a>
+                        </li>
+                        <li><a href="#user-management" class="text-indigo-600 hover:underline">5. User Management</a>
+                        </li>
+                        <li><a href="#settings" class="text-indigo-600 hover:underline">6. Settings</a></li>
+                        <li><a href="#troubleshooting" class="text-indigo-600 hover:underline">7. Troubleshooting</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <h2 id="getting-started">1. Getting Started</h2>
+
+                <h3>Login</h3>
+                <p>Access the application via your web browser. You will be presented with a login screen.</p>
+                <ul>
+                    <li>Enter your <strong>Username</strong> (email) and <strong>Password</strong>.</li>
+                    <li>Click <strong>Login & Start Messaging</strong>.</li>
+                    <li><em>First time setup?</em> Use the default admin credentials provided by your administrator
+                        (often <code>admin</code> / <code>admin</code>).</li>
+                </ul>
+
+                <h3>Initial Setup (First Run)</h3>
+                <p>If no existing driver database is found, you will see a "Get Started" prompt.</p>
+                <ol>
+                    <li>Click <strong>Choose Excel File</strong>.</li>
+                    <li>Select your driver roster file (<code>.xlsx</code> or <code>.xls</code> format).
+                        <br><em class="text-sm text-gray-500">Note: The Excel file must contain columns for
+                            <strong>Name</strong>, <strong>Phone</strong>, and <strong>Team</strong>.</em>
+                    </li>
+                    <li>Once uploaded, the dashboard will populate with your driver teams.</li>
+                </ol>
+
+                <h2 id="dashboard-overview">2. Dashboard Overview</h2>
+                <p>The dashboard is divided into two main sections:</p>
+                <ul>
+                    <li><strong>Left Column: Driver & Team Management</strong>
+                        <ul class="mt-1">
+                            <li>Search bar to find specific drivers.</li>
+                            <li>Team selector dropdown.</li>
+                            <li>Driver list with status indicators.</li>
+                            <li>Quick action buttons (Send Bulk Message, New Message).</li>
+                        </ul>
+                    </li>
+                    <li><strong>Right Column: Conversation Panel</strong>
+                        <ul class="mt-1">
+                            <li>Displays the chat history with the selected driver.</li>
+                            <li>Message input area with emoji picker and image attachment.</li>
+                            <li>Results panel showing delivery status of bulk messages.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h2 id="managing-drivers">3. Managing Drivers</h2>
+
+                <h3>Viewing Drivers</h3>
+                <ul>
+                    <li><strong>Teams</strong>: Use the dropdown menu at the top left to filter drivers by specific
+                        teams (e.g., "North Team", "Night Shift").</li>
+                    <li><strong>Sorting</strong>:
+                        <ul class="mt-1">
+                            <li><strong>Recent</strong>: Sorts by most recently messaged.</li>
+                            <li><strong>My Recent</strong>: Sorts by drivers <em>you</em> specifically messaged
+                                recently.</li>
+                            <li><strong>Name</strong>: Alphabetical order.</li>
+                            <li><strong>Team</strong>: Groups drivers by their assigned team.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Search</strong>: Type a name or phone number in the search bar to instantly filter the
+                        list.</li>
+                </ul>
+
+                <h3>Updating the Roster</h3>
+                <p>To update the list of drivers (e.g., new hires, team changes):</p>
+                <ol>
+                    <li>Go to <strong>Settings</strong> (⚙️ button in the header).</li>
+                    <li>Under "Update Driver List", click <strong>Choose Excel File</strong>.</li>
+                    <li>Upload the updated spreadsheet. This will replace the current list.</li>
+                </ol>
+
+                <h2 id="sending-messages">4. Sending Messages</h2>
+
+                <h3>Individual Messages</h3>
+                <ol>
+                    <li>Click on a driver's name in the list.</li>
+                    <li>The conversation panel opens on the right.</li>
+                    <li>Type your message in the input box.
+                        <ul class="mt-1">
+                            <li>Use the <strong>😊</strong> button for emojis.</li>
+                            <li>Use the <strong>📷</strong> button to attach an image.</li>
+                            <li>Toggle <strong>Add signature</strong> to append your name to the message.</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Send</strong> or press <code>Enter</code>.</li>
+                </ol>
+
+                <h3>Ad-Hoc Messages</h3>
+                <p>To message a number not in your driver list:</p>
+                <ol>
+                    <li>Click <strong>➕ New Message</strong> in the left column.</li>
+                    <li>Enter the <strong>Phone Number</strong> (include country code, e.g., +1...).</li>
+                    <li>(Optional) Enter a <strong>Name</strong> for temporary reference.</li>
+                    <li>Click <strong>Start Conversation</strong>.</li>
+                </ol>
+
+                <h3>Bulk Messages</h3>
+                <p>Send a broadcast message to an entire team or all drivers.</p>
+                <ol>
+                    <li>Click <strong>📤 Send Bulk Message</strong>.</li>
+                    <li><strong>Select Team</strong>: Choose a specific team or "All Teams".</li>
+                    <li><strong>Select Drivers</strong>: You can manually uncheck specific drivers if needed.</li>
+                    <li><strong>Compose Message</strong>: Type your message.
+                        <br><em class="text-sm text-gray-500">Variables: Use <code>{firstName}</code>,
+                            <code>{name}</code>, or <code>{team}</code> to personalize the message.</em>
+                    </li>
+                    <li><strong>Preview</strong>: Check the "Live Preview" box to see how it looks.</li>
+                    <li>Click <strong>🚀 Send Messages</strong>.</li>
+                </ol>
+
+                <h2 id="user-management">5. User Management</h2>
+                <p><em>Access: Admin & Supervisors only</em></p>
+                <ol>
+                    <li>Click the <strong>👥 Users</strong> button in the header (visible if you have permissions).</li>
+                    <li><strong>Add New User</strong>:
+                        <ul class="mt-1">
+                            <li>Enter Username (email), Password, Role (User, Supervisor, Admin), and Company.</li>
+                            <li><strong>Color</strong>: Assign a unique color. This color will identify messages sent by
+                                this user in the chat history.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Edit User</strong>: Click on an existing user to modify their details.</li>
+                </ol>
+
+                <h2 id="settings">6. Settings</h2>
+                <p>Click the <strong>⚙️ Settings</strong> button to customize your experience.</p>
+                <ul>
+                    <li><strong>Notification Sound</strong>: Choose a sound to play when a new message arrives.</li>
+                    <li><strong>Color Theme</strong>: Change the look of the app.</li>
+                    <li><strong>Blacklist</strong>: View numbers that have replied "STOP".</li>
+                    <li><strong>Cloud Sync</strong>: Manually sync your local message history to the cloud.</li>
+                    <li><strong>Admin Settings</strong> (Locked): Manage Twilio credentials.</li>
+                </ul>
+
+                <h2 id="troubleshooting">7. Troubleshooting</h2>
+                <ul>
+                    <li><strong>Messages not sending?</strong> Check internet connection and Twilio credentials in
+                        Settings.</li>
+                    <li><strong>Drivers not loading?</strong> Ensure Excel file has correct headers (Name, Phone, Team).
+                    </li>
+                    <li><strong>No notification sound?</strong> Click anywhere on the dashboard after loading to enable
+                        audio.</li>
+                    <li><strong>"Logins don't match" error?</strong> Clear browser cache or use Incognito mode.</li>
+                </ul>
+
+            </div>
+        </div>
+
+        <div class="text-center text-gray-500 text-sm pb-8">
+            <p>SMSMgr v2.2.0 • <a href="index.html" class="underline hover:text-gray-800">Back to App</a></p>
+        </div>
+    </div>
+</body>
+
+</html>

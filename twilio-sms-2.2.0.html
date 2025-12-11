@@ -321,6 +321,10 @@
                     class="modern-button px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 hidden">
                     👥 Users
                 </button>
+                <a href="guide.html" target="_blank"
+                    class="modern-button px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 decoration-0 no-underline flex items-center gap-2">
+                    📚 Guide
+                </a>
                 <button onclick="showSettings()"
                     class="modern-button px-6 py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-800">
                     ⚙️ Settings
@@ -897,9 +901,14 @@
         let searchQuery = '';
 
         // Backend API URL - automatically detects environment
-        const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
-            ? 'http://127.0.0.1:8787'  // Local development
-            : 'https://sms-backend.jamiececil.workers.dev'; // Production
+        // Backend API URL
+        // Improved logic: Default to production even on localhost, unless env=local is specified
+        const urlParams = new URLSearchParams(window.location.search);
+        const useLocalBackend = urlParams.get('env') === 'local';
+
+        const BACKEND_URL = (useLocalBackend && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'))
+            ? 'http://127.0.0.1:8787'  // Local development (only if requested)
+            : 'https://sms-backend.jamiececil.workers.dev'; // Production default
 
         // Get tenant from subdomain for multi-tenancy
         const getTenant = () => {

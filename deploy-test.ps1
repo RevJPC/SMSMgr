@@ -15,7 +15,8 @@ if (!(Test-Path "frontend-dist")) {
 
 # Copy index
 Copy-Item "twilio-sms-2.2.0.html" -Destination "frontend-dist/index.html" -Force
-Write-Host "✅ Copied HTML." -ForegroundColor Gray
+Copy-Item "guide.html" -Destination "frontend-dist/guide.html" -Force
+Write-Host "✅ Copied HTML files." -ForegroundColor Gray
 
 # Deploy
 Set-Location frontend-dist
