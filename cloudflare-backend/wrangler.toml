@@ -7,4 +7,4 @@ compatibility_date = "2023-10-25"
 [[kv_namespaces]]
 binding = "SMS_METADATA"
 id = "656ec81b85834af28aaffa946b48cba7"
-preview_id = "656ec81b85834af28aaffa946b48cba7"
+# preview_id removed for safety

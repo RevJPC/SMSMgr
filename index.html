@@ -469,9 +469,10 @@
                                 </button>
                                 <input type="file" id="imageInput" accept="image/*" class="hidden"
                                     onchange="handleImageSelect()">
-                                <input type="text" id="replyInput" placeholder="Type your message..."
-                                    class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl"
-                                    onkeypress="if(event.key==='Enter') sendReply()">
+                                <textarea id="replyInput" placeholder="Type your message... (Shift+Enter for new line)"
+                                    class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl resize-none overflow-hidden"
+                                    rows="1" oninput="autoExpandTextarea(this)"
+                                    onkeydown="handleReplyKeydown(event)"></textarea>
                                 <button onclick="sendReply()"
                                     class="modern-button px-6 py-3 bg-primary text-white rounded-xl font-semibold hover-primary">
                                     Send
@@ -1993,34 +1994,37 @@
             const auth = sessionStorage.getItem('auth');
             if (!auth) return;
 
-            // Filter for outbound messages only, as inbound don't have sender metadata (they are from the driver)
-            // Actually, we store metadata for ALL messages sent via our platform.
-            // But we only care about metadata for OUTBOUND messages (sent by us).
-            // Inbound messages (from drivers) don't have a "user" associated in our system in the same way.
+            // Helper to chunk array
+            const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+                arr.slice(i * size, i * size + size)
+            );
 
-            // Collect SIDs
-            const sids = messages.map(m => m.sid).join(',');
+            // Chunk messages into batches of 20 to avoid URL length limits
+            const batches = chunk(messages, 20);
 
-            if (!sids) return;
+            for (const batch of batches) {
+                const sids = batch.map(m => m.sid).join(',');
+                if (!sids) continue;
 
-            try {
-                const metaRes = await apiFetch(`${BACKEND_URL}/api/meta?sids=${sids}`, {
-                    headers: { 'Authorization': `Basic ${auth}` }
-                });
-
-                if (metaRes.ok) {
-                    const metaData = await metaRes.json();
-                    // Merge metadata into messages
-                    messages.forEach(m => {
-                        if (metaData[m.sid]) {
-                            m.senderName = metaData[m.sid].user;
-                            m.senderColor = metaData[m.sid].color;
-                            m.isBulk = metaData[m.sid].isBulk; // Load bulk flag
-                        }
+                try {
+                    const metaRes = await apiFetch(`${BACKEND_URL}/api/meta?sids=${sids}`, {
+                        headers: { 'Authorization': `Basic ${auth}` }
                     });
+
+                    if (metaRes.ok) {
+                        const metaData = await metaRes.json();
+                        // Merge metadata into messages
+                        batch.forEach(m => {
+                            if (metaData[m.sid]) {
+                                m.senderName = metaData[m.sid].user;
+                                m.senderColor = metaData[m.sid].color;
+                                m.isBulk = metaData[m.sid].isBulk; // Load bulk flag
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error fetching metadata batch:', e);
                 }
-            } catch (e) {
-                console.error('Error fetching metadata:', e);
             }
         }
 
@@ -2329,7 +2333,9 @@
                             senderColor: currentUserColor
                         });
                     }
-                    document.getElementById('replyInput').value = '';
+                    const replyInput = document.getElementById('replyInput');
+                    replyInput.value = '';
+                    replyInput.style.height = 'auto'; // Reset height to single line
                     clearImagePreview();
                     displayMessages();
                     updateDriverList();
@@ -2342,6 +2348,23 @@
                 console.error(err);
             }
         }
+
+        function autoExpandTextarea(textarea) {
+            // Reset height to auto to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Set height to scrollHeight (content height)
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+        }
+
+        function handleReplyKeydown(event) {
+            // If Enter is pressed without Shift, send the message
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Prevent newline
+                sendReply();
+            }
+            // If Shift+Enter, allow default behavior (new line)
+        }
+
 
         async function uploadImageToTwilio(file, sid, token) {
             // Upload image to ImgBB (free image hosting service)
