@@ -516,6 +516,138 @@ export default {
         });
       }
 
+      // 10. Upload Media - store image in KV and return a public URL for MMS
+      if (url.pathname === '/api/upload-media' && method === 'POST') {
+        const currentUser = await authenticate(request);
+        if (!currentUser) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+        const formData = await request.formData();
+        const file = formData.get('file');
+
+        if (!file) {
+          return new Response(JSON.stringify({ error: 'No file provided' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+
+        // Check size (Twilio MMS max is 5MB)
+        if (bytes.length > 5 * 1024 * 1024) {
+          return new Response(JSON.stringify({ error: 'File too large (max 5MB)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        // Generate a unique key and store in KV with 24hr expiry
+        const mediaKey = 'MEDIA_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        await env.SMS_METADATA.put(mediaKey, bytes, {
+          expirationTtl: 86400, // 24 hours
+          metadata: { contentType: file.type }
+        });
+
+        // Return public URL — served by /api/media/:key endpoint below
+        const mediaUrl = `${url.origin}/api/media/${mediaKey}`;
+
+        return new Response(JSON.stringify({ success: true, url: mediaUrl }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 11. Serve stored media publicly (no auth — Twilio needs to fetch this)
+      if (url.pathname.startsWith('/api/media/') && method === 'GET') {
+        const mediaKey = url.pathname.replace('/api/media/', '');
+        if (!mediaKey.startsWith('MEDIA_')) {
+          return new Response('Not found', { status: 404, headers: corsHeaders });
+        }
+
+        const { value, metadata } = await env.SMS_METADATA.getWithMetadata(mediaKey, { type: 'arrayBuffer' });
+        if (!value) {
+          return new Response('Media not found or expired', { status: 404, headers: corsHeaders });
+        }
+
+        return new Response(value, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': (metadata && metadata.contentType) || 'image/jpeg',
+            'Cache-Control': 'public, max-age=86400'
+          }
+        });
+      }
+
+      // 12. Media List Proxy - fetch Twilio media list for a received message
+      if (url.pathname === '/api/media-list' && method === 'GET') {
+        const currentUser = await authenticate(request);
+        if (!currentUser) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+
+        const messageSid = url.searchParams.get('sid');
+        if (!messageSid) return new Response(JSON.stringify({ error: 'Missing sid' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+        const settingsJson = await env.SMS_METADATA.get('SMS_SETTINGS');
+        if (!settingsJson) return new Response(JSON.stringify({ error: 'System not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        const { sid, token } = JSON.parse(settingsJson);
+        const cleanSid = String(sid).trim();
+        const cleanToken = String(token).trim();
+        const authHeader = 'Basic ' + base64Encode(`${cleanSid}:${cleanToken}`);
+
+        const twilioRes = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${cleanSid}/Messages/${messageSid}/Media.json`,
+          { headers: { 'Authorization': authHeader } }
+        );
+
+        if (!twilioRes.ok) {
+          return new Response(JSON.stringify({ media_list: [] }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        const data = await twilioRes.json();
+
+        // Map media URIs to proxied URLs so frontend never needs Twilio credentials
+        const mediaList = (data.media_list || []).map(m => ({
+          sid: m.sid,
+          contentType: m.content_type,
+          url: `https://api.twilio.com${m.uri.replace('.json', '')}`,
+          proxyUrl: `${url.origin}/api/media-proxy/${messageSid}/${m.sid}`
+        }));
+
+        return new Response(JSON.stringify({ media_list: mediaList }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 13. Media Proxy - serve Twilio media through worker (no Twilio creds needed in frontend)
+      if (url.pathname.startsWith('/api/media-proxy/') && method === 'GET') {
+        const currentUser = await authenticate(request);
+        if (!currentUser) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+
+        const parts = url.pathname.replace('/api/media-proxy/', '').split('/');
+        const messageSid = parts[0];
+        const mediaSid = parts[1];
+
+        if (!messageSid || !mediaSid) return new Response('Not found', { status: 404, headers: corsHeaders });
+
+        const settingsJson = await env.SMS_METADATA.get('SMS_SETTINGS');
+        if (!settingsJson) return new Response('Not configured', { status: 500, headers: corsHeaders });
+        const { sid, token } = JSON.parse(settingsJson);
+        const cleanSid = String(sid).trim();
+        const cleanToken = String(token).trim();
+        const authHeader = 'Basic ' + base64Encode(`${cleanSid}:${cleanToken}`);
+
+        const twilioRes = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${cleanSid}/Messages/${messageSid}/Media/${mediaSid}`,
+          { headers: { 'Authorization': authHeader } }
+        );
+
+        if (!twilioRes.ok) return new Response('Media not found', { status: 404, headers: corsHeaders });
+
+        const contentType = twilioRes.headers.get('Content-Type') || 'image/jpeg';
+        const imageData = await twilioRes.arrayBuffer();
+
+        return new Response(imageData, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': contentType,
+            'Cache-Control': 'private, max-age=3600'
+          }
+        });
+      }
+
       // TEMPORARY RECOVERY ENDPOINT - REMOVE AFTER USE
       // Visit: /api/recover?key=TOC2026reset  to reset admin password to admin:admin
       if (url.pathname === '/api/recover' && method === 'GET') {
