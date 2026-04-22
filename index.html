@@ -1207,11 +1207,26 @@
             document.documentElement.setAttribute('data-theme', theme);
         }
 
+        function deduplicateConversations(convObj) {
+            // Remove duplicate messages by SID within each conversation
+            const deduped = {};
+            for (const phone in convObj) {
+                const seen = new Set();
+                deduped[phone] = convObj[phone].filter(m => {
+                    if (!m.sid || seen.has(m.sid)) return false;
+                    seen.add(m.sid);
+                    return true;
+                });
+            }
+            return deduped;
+        }
+
         function loadCachedConversations() {
             try {
                 const cached = localStorage.getItem('cachedConversations');
                 if (cached) {
-                    conversations = JSON.parse(cached);
+                    const raw = JSON.parse(cached);
+                    conversations = deduplicateConversations(raw);
                     console.log(`Loaded cached conversations for ${Object.keys(conversations).length} numbers`);
                     updateDriverList();
                 }
@@ -1222,6 +1237,8 @@
 
         function saveCachedConversations() {
             try {
+                // Always deduplicate before writing to prevent cache corruption
+                conversations = deduplicateConversations(conversations);
                 localStorage.setItem('cachedConversations', JSON.stringify(conversations));
             } catch (e) {
                 console.error('Error saving conversations:', e);
