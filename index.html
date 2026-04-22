@@ -857,6 +857,7 @@
         let notificationSoundPreference = 'playTrill';
         let blacklistedNumbers = new Set();
         let seenMessageSids = new Set(); // Track already-known message SIDs to prevent false notifications
+        let isFirstPoll = true; // On first poll, seed all SIDs without firing notifications
         let currentTheme = 'purple';
         let audioContextReady = false;
         let selectedImage = null;
@@ -2253,6 +2254,20 @@
                         // Check if message already exists
                         if (!seenMessageSids.has(m.sid) && !conversations[phone].find(x => x.sid === m.sid)) {
                             seenMessageSids.add(m.sid);
+
+                            // On the first poll after login, just seed SIDs and store messages
+                            // without firing notifications — avoids spam from old messages
+                            if (isFirstPoll) {
+                                conversations[phone].push({
+                                    sid: m.sid,
+                                    body: m.body || '',
+                                    direction: m.direction,
+                                    timestamp: m.date_created,
+                                    media: []
+                                });
+                                continue; // skip notification logic entirely
+                            }
+
                             // Fetch metadata for this single new message
                             // We create a temporary array to reuse the helper
                             const tempArray = [m];
@@ -2333,6 +2348,12 @@
                                 }
                             }
                         }
+                    }
+
+                    // Mark first poll complete — notifications will fire from here on
+                    if (isFirstPoll) {
+                        isFirstPoll = false;
+                        console.log('First poll complete, seeded', seenMessageSids.size, 'SIDs — notifications now active');
                     }
 
                     // Save conversations to cache
