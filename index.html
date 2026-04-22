@@ -2106,16 +2106,30 @@
 
             try {
                 let mediaUrl = null;
-
-                // Upload image if present (still need SID/token for this)
-                if (hasImage) {
-                    // We need to get credentials for image upload
-                    // For now, let's skip image support or handle it differently
-                    alert('Image upload not yet supported with secure credentials. Coming soon!');
-                    return;
-                }
-
                 const auth = sessionStorage.getItem('auth');
+
+                // Upload image if present
+                if (hasImage) {
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', selectedImage);
+                        const uploadRes = await fetch(`${BACKEND_URL}/api/upload-media`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Basic ${auth}` },
+                            body: formData
+                        });
+                        if (!uploadRes.ok) {
+                            const err = await uploadRes.json();
+                            alert('Image upload failed: ' + (err.error || 'Unknown error'));
+                            return;
+                        }
+                        const uploadData = await uploadRes.json();
+                        mediaUrl = uploadData.url;
+                    } catch (e) {
+                        alert('Image upload failed: ' + e.message);
+                        return;
+                    }
+                }
                 if (!auth) {
                     alert('Please log in first');
                     return;
