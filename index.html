@@ -1970,50 +1970,30 @@
         }
 
         async function getAuthenticatedMediaUrl(mediaUrl) {
-            // If it's not a Twilio URL, return as-is (e.g., ImgBB URLs don't need auth)
-            if (!mediaUrl.includes('api.twilio.com')) {
-                console.log('Non-Twilio URL, returning as-is:', mediaUrl.substring(0, 50) + '...');
-                return mediaUrl;
-            }
-
             // Check cache first
-            if (mediaCache[mediaUrl]) {
-                console.log('Using cached media for:', mediaUrl.substring(0, 50) + '...');
-                return mediaCache[mediaUrl];
-            }
+            if (mediaCache[mediaUrl]) return mediaCache[mediaUrl];
 
-            console.log('Fetching authenticated Twilio media:', mediaUrl.substring(0, 50) + '...');
+            const auth = sessionStorage.getItem('auth');
 
-            const sid = document.getElementById('accountSid').value;
-            const token = document.getElementById('authToken').value;
-
-            try {
-                // Fetch the media with authentication
-                const response = await fetch(mediaUrl, {
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(sid + ':' + token)
-                    }
-                });
-
-                if (!response.ok) {
-                    console.error('Failed to fetch media, status:', response.status);
-                    throw new Error('Failed to fetch media');
+            // Proxy URLs from our worker need auth header
+            if (mediaUrl.includes('/api/media-proxy/') || mediaUrl.includes('/api/media/')) {
+                try {
+                    const response = await fetch(mediaUrl, {
+                        headers: { 'Authorization': `Basic ${auth}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch media');
+                    const blob = await response.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    mediaCache[mediaUrl] = objectUrl;
+                    return objectUrl;
+                } catch (err) {
+                    console.error('Error fetching proxied media:', err);
+                    return null;
                 }
-
-                // Convert to blob and create object URL
-                const blob = await response.blob();
-                const objectUrl = URL.createObjectURL(blob);
-
-                // Cache it
-                mediaCache[mediaUrl] = objectUrl;
-
-                console.log('Successfully created blob URL for Twilio media');
-                return objectUrl;
-            } catch (err) {
-                console.error('Error fetching media:', err);
-                // Fallback: return the original URL so the user can at least try to open it
-                return mediaUrl;
             }
+
+            // Non-proxy URLs (e.g. uploaded images served publicly) — return as-is
+            return mediaUrl;
         }
 
         async function displayMessages() {
@@ -2265,43 +2245,19 @@
                             await enrichMessagesWithMetadata(tempArray);
                             // m is now enriched (modified in place)
 
-                            // Get media URLs if present - FIXED VERSION
+                            // Get media URLs via backend proxy
                             const mediaUrls = [];
                             if (m.num_media && parseInt(m.num_media) > 0) {
-                                console.log(`Message ${m.sid} has ${m.num_media} media items, fetching...`);
-
                                 try {
-                                    // Fetch the media subresource for this message
-                                    // Note: Media fetching still requires direct Twilio access for now, or a separate proxy.
-                                    // But since we don't have credentials in frontend, we might need to skip this or implement /api/media
-                                    // For now, let's skip fetching media list details if we don't have credentials, 
-                                    // or we can try to fetch it via a new backend endpoint if needed.
-                                    // Actually, let's just log that we found media but can't fetch details yet without a proxy.
-                                    console.log('Media detected. Fetching media details via proxy is not yet implemented.');
-
-                                    /* 
-                                    // TODO: Implement /api/media-list proxy to fetch this
                                     const mediaRes = await fetch(
-                                        `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages/${m.sid}/Media.json`,
-                                        { headers: { 'Authorization': 'Basic ' + btoa(sid + ':' + token) } }
+                                        `${BACKEND_URL}/api/media-list?sid=${m.sid}`,
+                                        { headers: { 'Authorization': `Basic ${auth}` } }
                                     );
-                                    */
-
                                     if (mediaRes.ok) {
                                         const mediaData = await mediaRes.json();
-                                        console.log(`Found ${mediaData.media_list.length} media items`);
-
-                                        // Extract media URLs from the media list
                                         mediaData.media_list.forEach(media => {
-                                            if (media.uri) {
-                                                // Convert the relative URI to full URL
-                                                const fullUrl = `https://api.twilio.com${media.uri.replace('.json', '')}`;
-                                                mediaUrls.push(fullUrl);
-                                                console.log('Added media URL:', fullUrl);
-                                            }
+                                            if (media.proxyUrl) mediaUrls.push(media.proxyUrl);
                                         });
-                                    } else {
-                                        console.error('Failed to fetch media list:', mediaRes.status);
                                     }
                                 } catch (mediaErr) {
                                     console.error('Error fetching media for message:', mediaErr);
