@@ -316,21 +316,8 @@ export default {
         });
       }
 
-      // Helper: Manual Base64 implementation
-      const base64Encode = (str) => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-        let output = '';
-        for (let i = 0, length = str.length; i < length; i += 3) {
-          const char1 = str.charCodeAt(i);
-          const char2 = str.charCodeAt(i + 1);
-          const char3 = str.charCodeAt(i + 2);
-          output += chars.charAt(char1 >> 2);
-          output += chars.charAt(((char1 & 3) << 4) | ((char2 & 0xF0) >> 4));
-          output += chars.charAt(Number.isNaN(char2) ? 64 : ((char2 & 15) << 2) | ((char3 & 0xC0) >> 6));
-          output += chars.charAt(Number.isNaN(char3) ? 64 : char3 & 63);
-        }
-        return output;
-      };
+      // Base64 encoding — use native btoa() available in Cloudflare Workers
+      const base64Encode = (str) => btoa(str);
 
       // 6. Send Message Proxy
       if (url.pathname === '/api/send-message' && method === 'POST') {
