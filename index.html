@@ -321,10 +321,6 @@
                     class="modern-button px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 hidden">
                     👥 Users
                 </button>
-                <a href="guide.html" target="_blank"
-                    class="modern-button px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 decoration-0 no-underline flex items-center gap-2">
-                    📚 Guide
-                </a>
                 <button onclick="showSettings()"
                     class="modern-button px-6 py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-800">
                     ⚙️ Settings
@@ -340,7 +336,7 @@
         <div id="uploadPrompt" class="glass-card rounded-2xl p-8 text-center">
             <div class="text-6xl mb-4">📋</div>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Get Started</h2>
-            <p class="text-gray-600 mb-6">Upload your driver list to begin</p>
+            <p class="text-gray-600 mb-6">Upload your driver list to begin — it will be shared with all users</p>
 
             <div class="border-2 border-dashed rounded-2xl p-8 hover:border-primary transition inline-block"
                 style="border-color: var(--primary-light); background-color: rgba(var(--primary-rgb), 0.05);">
@@ -367,11 +363,6 @@
                                     class="modern-button px-2 py-1 bg-indigo-600 text-white rounded text-xs">
                                     Recent
                                 </button>
-                                <button onclick="sortDrivers('myRecent')" id="sortMyRecentBtn"
-                                    class="modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
-                                    title="Show drivers I messaged recently">
-                                    My Recent
-                                </button>
                                 <button onclick="sortDrivers('name')" id="sortNameBtn"
                                     class="modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
                                     Name
@@ -381,14 +372,6 @@
                                     Team
                                 </button>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2 mb-2">
-                            <label class="flex items-center gap-2 text-xs font-semibold text-gray-600 cursor-pointer">
-                                <input type="checkbox" id="hideBulkToggle"
-                                    onchange="displayMessages(); updateDriverList();"
-                                    class="rounded text-primary focus:ring-primary">
-                                Hide Bulk Messages
-                            </label>
                         </div>
                         <select id="teamSelect" onchange="updateDriverList()"
                             class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm font-semibold">
@@ -435,11 +418,6 @@
                                 <h2 class="text-xl font-bold text-gray-800" id="convName"></h2>
                                 <p class="text-sm text-gray-600" id="convPhone"></p>
                             </div>
-                            <button onclick="initiateCall()"
-                                class="modern-button px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 mr-2"
-                                title="Call this customer">
-                                📞 Call
-                            </button>
                             <button onclick="closeConversation()"
                                 class="modern-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
                                 ✕ Close
@@ -469,10 +447,9 @@
                                 </button>
                                 <input type="file" id="imageInput" accept="image/*" class="hidden"
                                     onchange="handleImageSelect()">
-                                <textarea id="replyInput" placeholder="Type your message... (Shift+Enter for new line)"
-                                    class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl resize-none overflow-hidden"
-                                    rows="1" oninput="autoExpandTextarea(this)"
-                                    onkeydown="handleReplyKeydown(event)"></textarea>
+                                <input type="text" id="replyInput" placeholder="Type your message..."
+                                    class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl"
+                                    onkeypress="if(event.key==='Enter') sendReply()">
                                 <button onclick="sendReply()"
                                     class="modern-button px-6 py-3 bg-primary text-white rounded-xl font-semibold hover-primary">
                                     Send
@@ -555,15 +532,8 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold mb-2">Twilio Phone Number</label>
-                            <input type="text" id="twilioNumber" placeholder="+1234567890"
+                            <input type="text" id="twilioNumber" placeholder="+1..."
                                 class="w-full px-4 py-3 border-2 rounded-xl" disabled>
-                        </div>
-                        <div class="col-span-2">
-                            <button type="button" onclick="testConnection()" id="testConnectionBtn"
-                                class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition text-sm">
-                                🔌 Test Connection
-                            </button>
-                            <p id="testConnectionResult" class="text-xs text-center mt-2 hidden"></p>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold mb-2">Company Name</label>
@@ -648,22 +618,11 @@
                     <p class="text-xs text-gray-500 mt-2">Clear cached driver data if you need to start fresh</p>
                 </div>
             </div>
-            <div class="mt-6 pt-6 border-t border-gray-200">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">☁️ Cloud Sync</h3>
-                <p class="text-sm text-gray-600 mb-4">
-                    Upload your local message history (colors/names) to the cloud so it appears on the web version.
-                </p>
-                <button onclick="syncHistory()"
-                    class="modern-button px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 w-full">
-                    🔄 Sync History to Cloud
-                </button>
-            </div>
+            <button onclick="saveSettings()"
+                class="w-full mt-6 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover-primary">
+                Save Settings
+            </button>
         </div>
-        <button onclick="saveSettings()"
-            class="w-full mt-6 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover-primary">
-            Save Settings
-        </button>
-    </div>
     </div>
 
     <!-- Bulk Message Modal -->
@@ -883,70 +842,25 @@
         let teams = [];
         let conversations = {};
         let currentDriver = null;
-        let sortBy = 'recent'; // 'recent', 'team', 'myRecent'
+        let sortBy = 'recent';
         let sortReverse = false;
         let users = [];
         let currentUser = null;
         let currentUserRole = 'User';
         let currentUserColor = '#667eea';
-        let globalCompanyName = ''; // Store global company name
         let selectedDriverIds = new Set();
         let unreadDrivers = new Set();
         let lastMessageCount = {};
         let mediaCache = {}; // Cache for authenticated media URLs
         let notificationSoundPreference = 'playTrill';
         let blacklistedNumbers = new Set();
+        let seenMessageSids = new Set(); // Track already-known message SIDs to prevent false notifications
         let currentTheme = 'purple';
         let audioContextReady = false;
         let selectedImage = null;
         let searchQuery = '';
-
-        // Backend API URL - automatically detects environment
-        // Backend API URL
-        // Improved logic: Default to production even on localhost, unless env=local is specified
-        const urlParams = new URLSearchParams(window.location.search);
-        const useLocalBackend = urlParams.get('env') === 'local';
-
-        const BACKEND_URL = (useLocalBackend && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'))
-            ? 'http://127.0.0.1:8787'  // Local development (only if requested)
-            : 'https://sms-backend.jamie-381.workers.dev'; // Production default
-
-        // Get tenant from subdomain for multi-tenancy
-        const getTenant = () => {
-            const hostname = window.location.hostname;
-            const parts = hostname.split('.');
-
-            // Handle test.toc.smsmgr.com -> returns 'toc'
-            if (parts[0] === 'test' && parts.length > 3) {
-                return parts[1];
-            }
-
-            // If subdomain exists (e.g., toc.smsmgr.com), return 'toc'
-            if (parts.length > 2 && parts[0] !== 'www') {
-                return parts[0];
-            }
-            return 'default';
-        };
-
-        const TENANT = getTenant();
-        console.log('Environment:', window.location.hostname);
-        console.log('Backend URL:', BACKEND_URL);
-        console.log('Tenant:', TENANT);
-
-        // Wrapper for fetch to include Tenant ID
-        const apiFetch = async (endpoint, options = {}) => {
-            const headers = options.headers || {};
-            if (!(headers instanceof Headers)) {
-                // Ensure headers is an object
-                options.headers = {
-                    ...headers,
-                    'X-Tenant-ID': TENANT
-                };
-            } else {
-                headers.set('X-Tenant-ID', TENANT);
-            }
-            return fetch(endpoint, options);
-        };
+        // TODO: Replace with your actual Cloudflare Worker URL after deployment
+        const BACKEND_URL = 'https://sms-backend.jamie-381.workers.dev';
 
 
         function handleSearch() {
@@ -1022,13 +936,18 @@
             loadCredentials();
             loadBlacklist();
             loadTheme();
-            loadCachedDrivers();
             loadAdHocContacts(); // Load ad-hoc contacts before cached conversations
             loadCachedConversations();
             initializeEmojiPicker();
 
             // Check Cloudflare Auth
             await checkAuth();
+
+            // Load shared driver list from server (replaces localStorage cache)
+            await loadSharedDrivers();
+
+            // Seed seen SIDs from current conversations so startup doesn't trigger notifications
+            seedSeenSids();
 
             setInterval(pollMessages, 15000);
             registerServiceWorker();
@@ -1044,7 +963,7 @@
 
             try {
                 // 1. Verify Token & Get Username
-                const res = await apiFetch(`${BACKEND_URL}/api/me`, {
+                const res = await fetch(`${BACKEND_URL}/api/me`, {
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
 
@@ -1063,7 +982,7 @@
 
                         // 2. Fetch User Details (Color, Role, Company)
                         try {
-                            const userRes = await apiFetch(`${BACKEND_URL}/api/users`, {
+                            const userRes = await fetch(`${BACKEND_URL}/api/users`, {
                                 headers: { 'Authorization': `Basic ${auth}` }
                             });
                             if (userRes.ok) {
@@ -1086,13 +1005,12 @@
 
                         // 3. Load company name from settings
                         try {
-                            const settingsRes = await apiFetch(`${BACKEND_URL}/api/settings`, {
+                            const settingsRes = await fetch(`${BACKEND_URL}/api/settings`, {
                                 headers: { 'Authorization': `Basic ${auth}` }
                             });
                             if (settingsRes.ok) {
                                 const settingsData = await settingsRes.json();
                                 if (settingsData.company) {
-                                    globalCompanyName = settingsData.company; // Store globally
                                     updateHeaderTitle(settingsData.company);
                                 }
                             }
@@ -1140,7 +1058,7 @@
             const auth = btoa(`${user}:${pass}`);
 
             try {
-                const res = await apiFetch(`${BACKEND_URL}/api/me`, {
+                const res = await fetch(`${BACKEND_URL}/api/me`, {
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
 
@@ -1419,74 +1337,11 @@
                     if (data.number) document.getElementById('twilioNumber').value = data.number;
                     if (data.company) {
                         document.getElementById('companyNameSettings').value = data.company;
-                        globalCompanyName = data.company; // Store globally
                         updateHeaderTitle(data.company);
                     }
                 }
             } catch (e) {
                 console.error('Failed to load settings:', e);
-            }
-        }
-
-        async function syncHistory() {
-            if (!confirm('This will upload your local message colors and names to the cloud. Continue?')) return;
-
-            const auth = sessionStorage.getItem('auth');
-            if (!auth) return;
-
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = '⏳ Syncing...';
-            btn.disabled = true;
-
-            try {
-                // Collect all metadata from local conversations
-                const batchData = {};
-                let count = 0;
-
-                Object.values(conversations).forEach(msgs => {
-                    msgs.forEach(m => {
-                        // Only sync outbound messages that have sender info
-                        if (m.direction === 'outbound-api' && m.senderName && m.senderColor) {
-                            batchData[m.sid] = {
-                                user: m.senderName,
-                                color: m.senderColor
-                            };
-                            count++;
-                        }
-                    });
-                });
-
-                if (count === 0) {
-                    alert('No local history found to sync.');
-                    return;
-                }
-
-                console.log(`Syncing ${count} messages...`);
-
-                const res = await apiFetch(`${BACKEND_URL}/api/meta/batch`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Basic ${auth}`
-                    },
-                    body: JSON.stringify(batchData)
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    alert(`✅ Successfully synced ${data.count} messages to the cloud!`);
-                } else {
-                    const err = await res.text();
-                    alert('Sync failed: ' + err);
-                }
-
-            } catch (e) {
-                console.error('Sync error:', e);
-                alert('Sync error: ' + e.message);
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
             }
         }
 
@@ -1643,23 +1498,17 @@
         }
 
         function handleFileUpload2() {
-            // Clear existing cache before processing new file
-            try {
-                localStorage.removeItem('cachedDrivers');
-                localStorage.removeItem('cachedTeams');
-                localStorage.removeItem('driversLastUpdated');
-                drivers = [];
-                teams = [];
-                console.log('Cleared driver cache for new upload');
-            } catch (e) {
-                console.error('Error clearing cache:', e);
-            }
-
+            // Clear lingering localStorage
+            localStorage.removeItem('cachedDrivers');
+            localStorage.removeItem('cachedTeams');
+            localStorage.removeItem('driversLastUpdated');
+            drivers = [];
+            teams = [];
             processFile(document.getElementById('fileInput2').files[0]);
             closeSettings();
         }
 
-        function processFile(file) {
+        async function processFile(file) {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -1692,7 +1541,7 @@
                         return a.localeCompare(b);
                     });
 
-                    saveDriversToCache();
+                    await saveDriversToServer();
 
                     const teamSelect = document.getElementById('teamSelect');
                     teamSelect.innerHTML = teams.map(t => {
@@ -1706,7 +1555,7 @@
                     document.getElementById('uploadPrompt').classList.add('hidden');
                     document.getElementById('mainInterface').classList.remove('hidden');
                     updateDriverList();
-                    alert(`✅ Loaded ${drivers.length} drivers`);
+                    alert(`✅ Loaded ${drivers.length} drivers (shared with all users)`);
                 } catch (err) {
                     alert('Error: ' + err.message);
                 }
@@ -1714,14 +1563,80 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function saveDriversToCache() {
+        async function saveDriversToServer() {
+            const auth = sessionStorage.getItem('auth');
+            if (!auth) return;
             try {
-                localStorage.setItem('cachedDrivers', JSON.stringify(drivers));
-                localStorage.setItem('cachedTeams', JSON.stringify(teams));
-                localStorage.setItem('driversLastUpdated', new Date().toISOString());
+                const res = await fetch(`${BACKEND_URL}/api/drivers`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${auth}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ drivers, teams })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log(`Driver list saved to server: ${data.count} drivers`);
+                } else {
+                    console.error('Failed to save driver list to server:', res.status);
+                }
             } catch (e) {
-                console.log('Could not cache drivers:', e);
+                console.error('Error saving drivers to server:', e);
             }
+        }
+
+        async function loadSharedDrivers() {
+            const auth = sessionStorage.getItem('auth');
+            if (!auth) return;
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/drivers`, {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.drivers || data.drivers.length === 0) {
+                    console.log('No shared driver list found on server - showing upload screen');
+                    return;
+                }
+                drivers = data.drivers;
+                teams = data.teams || ['all'];
+                console.log(`Loaded ${drivers.length} drivers from server (uploaded by ${data.updatedBy} at ${data.updatedAt})`);
+
+                const teamSelect = document.getElementById('teamSelect');
+                if (teamSelect) {
+                    teamSelect.innerHTML = teams.map(t => {
+                        const count = t === 'all' ? drivers.length : drivers.filter(d => d.team === t).length;
+                        return `<option value="${t}">${t === 'all' ? '🌍 All Teams' : t} (${count})</option>`;
+                    }).join('');
+                    teamSelect.value = 'all';
+                }
+
+                if (drivers.length > 0) {
+                    document.getElementById('uploadPrompt').classList.add('hidden');
+                    document.getElementById('mainInterface').classList.remove('hidden');
+                    updateDriverList();
+
+                    // Show a subtle banner if the list was uploaded by someone else
+                    if (data.updatedBy && data.updatedBy !== currentUser) {
+                        const date = new Date(data.updatedAt);
+                        console.log(`Driver list last updated by ${data.updatedBy} on ${date.toLocaleString()}`);
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading shared drivers:', e);
+            }
+        }
+
+        function seedSeenSids() {
+            // Mark all messages already in conversations as seen so the first poll
+            // doesn't fire false notifications for messages we already know about.
+            for (const phone in conversations) {
+                for (const msg of conversations[phone]) {
+                    if (msg.sid) seenMessageSids.add(msg.sid);
+                }
+            }
+            console.log(`Seeded ${seenMessageSids.size} known message SIDs`);
         }
 
         function updateTeamOptions() {
@@ -1734,51 +1649,9 @@
             }
         }
 
-        function loadCachedDrivers() {
-            try {
-                const cachedDrivers = localStorage.getItem('cachedDrivers');
-                const cachedTeams = localStorage.getItem('cachedTeams');
-                const lastUpdated = localStorage.getItem('driversLastUpdated');
-
-                console.log('Checking for cached drivers...', cachedDrivers ? 'Found' : 'Not found');
-
-                if (cachedDrivers && cachedTeams) {
-                    drivers = JSON.parse(cachedDrivers);
-                    teams = JSON.parse(cachedTeams);
-
-                    console.log(`Loaded ${drivers.length} cached drivers`);
-
-                    if (drivers.length > 0) {
-                        const teamSelect = document.getElementById('teamSelect');
-                        if (teamSelect) {
-                            teamSelect.innerHTML = teams.map(t => {
-                                const count = t === 'all' ? drivers.length : drivers.filter(d => d.team === t).length;
-                                return `<option value="${t}">${t === 'all' ? '🌍 All Teams' : t} (${count})</option>`;
-                            }).join('');
-
-                            // Default to "all" teams
-                            teamSelect.value = 'all';
-
-                            document.getElementById('uploadPrompt').classList.add('hidden');
-                            document.getElementById('mainInterface').classList.remove('hidden');
-                            updateDriverList();
-
-                            if (lastUpdated) {
-                                const date = new Date(lastUpdated);
-                                console.log(`Driver list loaded (last updated: ${date.toLocaleString()})`);
-                            }
-                        }
-                    }
-                } else {
-                    console.log('No cached drivers found - showing upload screen');
-                }
-            } catch (e) {
-                console.error('Error loading cached drivers:', e);
-            }
-        }
-
         function clearDriverCache() {
-            if (confirm('Clear saved driver list? You will need to upload again.')) {
+            if (confirm('Clear driver list for everyone? All users will need to re-upload.')) {
+                // Clear any lingering localStorage too
                 localStorage.removeItem('cachedDrivers');
                 localStorage.removeItem('cachedTeams');
                 localStorage.removeItem('driversLastUpdated');
@@ -1792,53 +1665,37 @@
 
         function sortDrivers(type) {
             if (sortBy === type) {
-                // If clicking same sort, toggle reverse (except for 'recent' which usually stays desc)
-                // Actually let's just keep it simple: clicking 'recent' always resets to standard recent
-                if (type !== 'recent' && type !== 'myRecent') sortReverse = !sortReverse;
+                sortReverse = !sortReverse;
             } else {
                 sortBy = type;
                 sortReverse = false;
             }
 
-            // Update buttons
-            ['recent', 'name', 'team', 'myRecent'].forEach(t => {
-                const btn = document.getElementById(`sort${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
-                if (btn) {
-                    if (t === sortBy) {
-                        btn.classList.remove('bg-gray-200', 'text-gray-700');
-                        btn.classList.add('bg-indigo-600', 'text-white');
-                    } else {
-                        btn.classList.add('bg-gray-200', 'text-gray-700');
-                        btn.classList.remove('bg-indigo-600', 'text-white');
-                    }
-                }
-            });
+            // Update button states
+            document.getElementById('sortRecentBtn').className = type === 'recent'
+                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
+                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
+            document.getElementById('sortNameBtn').className = type === 'name'
+                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
+                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
+            document.getElementById('sortTeamBtn').className = type === 'team'
+                ? 'modern-button px-2 py-1 bg-primary text-white rounded text-xs'
+                : 'modern-button px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs';
 
             updateDriverList();
         }
 
         function getLastMessageTime(phone) {
-            const msgs = conversations[phone];
-            if (!msgs || msgs.length === 0) return 0;
-            // Use the last message regardless of sender
-            const last = msgs[msgs.length - 1];
-            return last.timestamp ? new Date(last.timestamp).getTime() : 0;
-        }
+            const msgs = conversations[phone] || [];
+            if (msgs.length === 0) return 0;
 
-        function getLastMyMessageTime(phone) {
-            const msgs = conversations[phone];
-            if (!msgs || msgs.length === 0) return 0;
+            const lastMsg = msgs.reduce((latest, msg) => {
+                const msgTime = msg.timestamp ? new Date(msg.timestamp).getTime() : 0;
+                const latestTime = latest.timestamp ? new Date(latest.timestamp).getTime() : 0;
+                return msgTime > latestTime ? msg : latest;
+            }, msgs[0]);
 
-            // Find last message sent by current user
-            // We check senderName against currentUser
-            // Note: senderName might be null for old messages, so this only works for new/synced ones
-            for (let i = msgs.length - 1; i >= 0; i--) {
-                const m = msgs[i];
-                if (m.direction === 'outbound-api' && m.senderName === currentUser) {
-                    return m.timestamp ? new Date(m.timestamp).getTime() : 0;
-                }
-            }
-            return 0;
+            return lastMsg.timestamp ? new Date(lastMsg.timestamp).getTime() : 0;
         }
 
         function getLastMessagePreview(phone) {
@@ -1901,26 +1758,18 @@
                 if (aUnread && !bUnread) return -1;
                 if (!aUnread && bUnread) return 1;
 
-                // Sort
-                // Sort
-                let comparison = 0;
-                if (sortBy === 'team') {
-                    comparison = a.team.localeCompare(b.team);
-                } else if (sortBy === 'myRecent') {
-                    // Sort by last message sent by CURRENT USER
-                    const timeA = getLastMyMessageTime(a.phone);
-                    const timeB = getLastMyMessageTime(b.phone);
-                    comparison = timeB - timeA;
-                } else if (sortBy === 'name') {
-                    comparison = a.name.localeCompare(b.name);
-                } else {
-                    // Recent (default)
+                // Then sort by selected criteria
+                let val;
+                if (sortBy === 'recent') {
                     const timeA = getLastMessageTime(a.phone);
                     const timeB = getLastMessageTime(b.phone);
-                    comparison = timeB - timeA;
+                    val = timeB - timeA; // Most recent first
+                } else if (sortBy === 'name') {
+                    val = a.name.localeCompare(b.name);
+                } else { // team
+                    val = a.team.localeCompare(b.team);
                 }
-
-                return sortReverse ? -comparison : comparison;
+                return sortReverse ? -val : val;
             });
 
             document.getElementById('driverList').innerHTML = filtered.map(d => {
@@ -1942,7 +1791,7 @@
                             </div>
                         </div>
                         <div class="text-xs text-gray-500 truncate mb-1">${d.team}</div>
-                        ${sortBy === 'recent' || sortBy === 'myRecent' ? `
+                        ${sortBy === 'recent' ? `
                             <div class="text-xs ${preview.text === 'No messages yet' ? 'text-gray-400 italic' : 'text-gray-600'} truncate">
                                 ${preview.text}
                             </div>
@@ -1994,37 +1843,33 @@
             const auth = sessionStorage.getItem('auth');
             if (!auth) return;
 
-            // Helper to chunk array
-            const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
-                arr.slice(i * size, i * size + size)
-            );
+            // Filter for outbound messages only, as inbound don't have sender metadata (they are from the driver)
+            // Actually, we store metadata for ALL messages sent via our platform.
+            // But we only care about metadata for OUTBOUND messages (sent by us).
+            // Inbound messages (from drivers) don't have a "user" associated in our system in the same way.
 
-            // Chunk messages into batches of 20 to avoid URL length limits
-            const batches = chunk(messages, 20);
+            // Collect SIDs
+            const sids = messages.map(m => m.sid).join(',');
 
-            for (const batch of batches) {
-                const sids = batch.map(m => m.sid).join(',');
-                if (!sids) continue;
+            if (!sids) return;
 
-                try {
-                    const metaRes = await apiFetch(`${BACKEND_URL}/api/meta?sids=${sids}`, {
-                        headers: { 'Authorization': `Basic ${auth}` }
+            try {
+                const metaRes = await fetch(`${BACKEND_URL}/api/meta?sids=${sids}`, {
+                    headers: { 'Authorization': `Basic ${auth}` }
+                });
+
+                if (metaRes.ok) {
+                    const metaData = await metaRes.json();
+                    // Merge metadata into messages
+                    messages.forEach(m => {
+                        if (metaData[m.sid]) {
+                            m.senderName = metaData[m.sid].user;
+                            m.senderColor = metaData[m.sid].color;
+                        }
                     });
-
-                    if (metaRes.ok) {
-                        const metaData = await metaRes.json();
-                        // Merge metadata into messages
-                        batch.forEach(m => {
-                            if (metaData[m.sid]) {
-                                m.senderName = metaData[m.sid].user;
-                                m.senderColor = metaData[m.sid].color;
-                                m.isBulk = metaData[m.sid].isBulk; // Load bulk flag
-                            }
-                        });
-                    }
-                } catch (e) {
-                    console.error('Error fetching metadata batch:', e);
                 }
+            } catch (e) {
+                console.error('Error fetching metadata:', e);
             }
         }
 
@@ -2035,10 +1880,10 @@
             try {
                 // Optimization: Fetch inbound and outbound messages in parallel using Backend Proxy
                 const [inboundRes, outboundRes] = await Promise.all([
-                    apiFetch(`${BACKEND_URL}/api/messages?PageSize=50&From=${encodeURIComponent(phone)}`, {
+                    fetch(`${BACKEND_URL}/api/messages?PageSize=50&From=${encodeURIComponent(phone)}`, {
                         headers: { 'Authorization': `Basic ${auth}` }
                     }),
-                    apiFetch(`${BACKEND_URL}/api/messages?PageSize=50&To=${encodeURIComponent(phone)}`, {
+                    fetch(`${BACKEND_URL}/api/messages?PageSize=50&To=${encodeURIComponent(phone)}`, {
                         headers: { 'Authorization': `Basic ${auth}` }
                     })
                 ]);
@@ -2089,8 +1934,7 @@
                         timestamp: m.date_created,
                         media: mediaUrls,
                         senderName: m.senderName,
-                        senderColor: m.senderColor,
-                        isBulk: m.isBulk // Persist bulk flag
+                        senderColor: m.senderColor
                     });
 
                     // Check for STOP message
@@ -2173,25 +2017,13 @@
             if (!targetDriver) return;
 
             const msgs = conversations[targetDriver.phone] || [];
-            const hideBulk = document.getElementById('hideBulkToggle')?.checked;
 
             if (msgs.length === 0) {
                 thread.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages yet</p>';
                 return;
             }
 
-            // Filter messages if needed
-            let displayMsgs = msgs;
-            if (hideBulk) {
-                displayMsgs = msgs.filter(m => !m.isBulk);
-            }
-
-            if (displayMsgs.length === 0) {
-                thread.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages (Bulk hidden)</p>';
-                return;
-            }
-
-            const sortedMsgs = [...displayMsgs].sort((a, b) => {
+            const sortedMsgs = [...msgs].sort((a, b) => {
                 const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
                 const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
                 return timeA - timeB;
@@ -2263,7 +2095,6 @@
                         </div>
                         <div class="flex items-center gap-2 mt-1 px-2">
                             ${isSent && m.senderName ? `<span class="text-xs font-medium text-gray-500">${m.senderName}</span>` : ''}
-                            ${m.isBulk ? `<span class="text-xs font-bold text-blue-500 bg-blue-50 px-1 rounded">BULK</span>` : ''}
                             ${timestamp ? `<span class="text-xs text-gray-400">${timestamp}</span>` : ''}
                         </div>
                     </div>
@@ -2304,7 +2135,7 @@
                 }
 
                 // Use backend proxy
-                const res = await apiFetch(`${BACKEND_URL}/api/send-message`, {
+                const res = await fetch(`${BACKEND_URL}/api/send-message`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2333,9 +2164,7 @@
                             senderColor: currentUserColor
                         });
                     }
-                    const replyInput = document.getElementById('replyInput');
-                    replyInput.value = '';
-                    replyInput.style.height = 'auto'; // Reset height to single line
+                    document.getElementById('replyInput').value = '';
                     clearImagePreview();
                     displayMessages();
                     updateDriverList();
@@ -2348,23 +2177,6 @@
                 console.error(err);
             }
         }
-
-        function autoExpandTextarea(textarea) {
-            // Reset height to auto to get the correct scrollHeight
-            textarea.style.height = 'auto';
-            // Set height to scrollHeight (content height)
-            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-        }
-
-        function handleReplyKeydown(event) {
-            // If Enter is pressed without Shift, send the message
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault(); // Prevent newline
-                sendReply();
-            }
-            // If Shift+Enter, allow default behavior (new line)
-        }
-
 
         async function uploadImageToTwilio(file, sid, token) {
             // Upload image to ImgBB (free image hosting service)
@@ -2418,7 +2230,7 @@
             try {
                 // Only fetch recent messages (last 100) to check for new activity
                 // Use backend proxy
-                const res = await apiFetch(`${BACKEND_URL}/api/messages?PageSize=100`, {
+                const res = await fetch(`${BACKEND_URL}/api/messages?PageSize=100`, {
                     headers: { 'Authorization': `Basic ${auth}` }
                 });
 
@@ -2436,7 +2248,8 @@
                         }
 
                         // Check if message already exists
-                        if (!conversations[phone].find(x => x.sid === m.sid)) {
+                        if (!seenMessageSids.has(m.sid) && !conversations[phone].find(x => x.sid === m.sid)) {
+                            seenMessageSids.add(m.sid);
                             // Fetch metadata for this single new message
                             // We create a temporary array to reuse the helper
                             const tempArray = [m];
@@ -2452,7 +2265,9 @@
                                     // Fetch the media subresource for this message
                                     // Note: Media fetching still requires direct Twilio access for now, or a separate proxy.
                                     // But since we don't have credentials in frontend, we might need to skip this or implement /api/media
-                                    // For now, let's just log that we found media but can't fetch details yet without a proxy.
+                                    // For now, let's skip fetching media list details if we don't have credentials, 
+                                    // or we can try to fetch it via a new backend endpoint if needed.
+                                    // Actually, let's just log that we found media but can't fetch details yet without a proxy.
                                     console.log('Media detected. Fetching media details via proxy is not yet implemented.');
 
                                     /* 
@@ -3067,14 +2882,10 @@
             const user = users.find(u => u.username === username);
             if (!user) return '- ' + username;
 
-            let parts = [username];
-            if (user.role && user.role !== 'User') parts.push(user.role);
-
-            // Use user's company or fallback to global company name
-            const company = user.company || globalCompanyName;
-            if (company) parts.push(company);
-
-            return '- ' + parts.join(', ');
+            let sigLines = ['- ' + username];
+            if (user.role && user.role !== 'User') sigLines.push(user.role);
+            if (user.company) sigLines.push(user.company);
+            return sigLines.join('\n');
         }
 
         async function saveSettings() {
@@ -3130,53 +2941,6 @@
             }
 
             closeSettings();
-        }
-
-        async function testConnection() {
-            const sid = document.getElementById('accountSid').value.trim();
-            const token = document.getElementById('authToken').value.trim();
-            const btn = document.getElementById('testConnectionBtn');
-            const result = document.getElementById('testConnectionResult');
-
-            if (!sid || !token) {
-                alert('Please enter SID and Token first');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = 'Testing...';
-            result.classList.add('hidden');
-
-            try {
-                const auth = sessionStorage.getItem('auth');
-                const res = await fetch(`${BACKEND_URL}/api/test-connection`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Basic ${auth}`
-                    },
-                    body: JSON.stringify({ sid, token })
-                });
-
-                const data = await res.json();
-
-                result.classList.remove('hidden');
-                if (data.success) {
-                    result.innerHTML = `<span class="text-green-600 font-bold">✅ Success! Connected to: ${data.accountName}</span>`;
-                    btn.classList.remove('bg-gray-200', 'text-gray-700');
-                    btn.classList.add('bg-green-100', 'text-green-700');
-                } else {
-                    result.innerHTML = `<span class="text-red-600 font-bold">❌ Failed: ${data.error}</span>`;
-                    btn.classList.remove('bg-green-100', 'text-green-700');
-                    btn.classList.add('bg-gray-200', 'text-gray-700');
-                }
-            } catch (e) {
-                result.classList.remove('hidden');
-                result.innerHTML = `<span class="text-red-600 font-bold">❌ Error: ${e.message}</span>`;
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🔌 Test Connection';
-            }
         }
 
         function updateHeaderTitle(company) {
@@ -3275,8 +3039,7 @@
                         },
                         body: JSON.stringify({
                             to: d.phone,
-                            body: personalizedMsg,
-                            isBulk: true // Flag as bulk
+                            body: personalizedMsg
                         })
                     });
 
@@ -3297,8 +3060,7 @@
                                 direction: 'outbound-api',
                                 timestamp: responseData.date_created || new Date().toISOString(),
                                 senderName: currentUser,
-                                senderColor: currentUserColor || '#667eea',
-                                isBulk: true
+                                senderColor: currentUserColor || '#667eea'
                             });
                         }
                     } else {
@@ -3516,123 +3278,11 @@
                 btn.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
             }
         }
-        // ========== CALL FUNCTIONS ==========
-
-        function initiateCall() {
-            const phone = document.getElementById('convPhone').textContent;
-            const name = document.getElementById('convName').textContent;
-
-            if (!phone) return;
-
-            document.getElementById('callCustomerName').textContent = name;
-            document.getElementById('callCustomerNumber').textContent = phone;
-
-            // Load saved number
-            const savedNum = localStorage.getItem('my_personal_number');
-            if (savedNum) {
-                document.getElementById('myPhoneNumber').value = savedNum;
-            }
-
-            document.getElementById('callModal').classList.remove('hidden');
-            // Focus input if empty
-            if (!savedNum) {
-                setTimeout(() => document.getElementById('myPhoneNumber').focus(), 100);
-            }
-        }
-
-        function closeCallModal() {
-            document.getElementById('callModal').classList.add('hidden');
-        }
-
-        async function performCall() {
-            const myPhone = document.getElementById('myPhoneNumber').value.trim();
-            const customerPhone = document.getElementById('callCustomerNumber').textContent.trim();
-
-            if (!myPhone) {
-                alert('Please enter your phone number');
-                return;
-            }
-
-            // Save for next time
-            localStorage.setItem('my_personal_number', myPhone);
-
-            const btn = document.getElementById('performCallBtn');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span>⏳</span> Calling you...';
-
-            try {
-                const auth = sessionStorage.getItem('auth');
-                const res = await fetch(`${BACKEND_URL}/api/make-call`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Basic ${auth}`
-                    },
-                    body: JSON.stringify({
-                        userPhone: myPhone,
-                        customerPhone: customerPhone
-                    })
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    alert('✅ Call initiated! Pick up your phone.');
-                    closeCallModal();
-                } else {
-                    alert('❌ Call Failed: ' + (data.error || 'Unknown error'));
-                }
-            } catch (e) {
-                alert('❌ Error: ' + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        }
-
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', () => {
             // checkSavedLogin(); // No longer needed with new auth
-
-            // Load users if authenticated (to get company info for signatures)
-            if (sessionStorage.getItem('auth')) {
-                loadUsers();
-            }
         });
     </script>
-    <!-- Call Modal -->
-    <div id="callModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">📞 Make a Call</h2>
-                <button onclick="closeCallModal()" class="text-gray-500 hover:text-gray-700 text-3xl">×</button>
-            </div>
-
-            <div class="text-center mb-6">
-                <p class="text-gray-600 mb-2">Calling <span id="callCustomerName" class="font-bold"></span></p>
-                <p class="text-2xl font-bold text-gray-800 mb-4" id="callCustomerNumber"></p>
-                <div class="p-4 bg-yellow-50 rounded-xl border border-yellow-200 text-sm text-yellow-800 text-left">
-                    <p class="font-bold mb-1">How this works:</p>
-                    1. We will call your phone number first.<br>
-                    2. When you answer, we'll bridge you to the customer.<br>
-                    3. The customer will see the business number.
-                </div>
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-sm font-semibold mb-2">Your Phone Number</label>
-                <input type="tel" id="myPhoneNumber" placeholder="+1..."
-                    class="w-full px-4 py-3 border-2 rounded-xl text-lg text-center font-mono">
-                <p class="text-xs text-gray-500 mt-1 text-center">Saved for next time</p>
-            </div>
-
-            <button onclick="performCall()" id="performCallBtn"
-                class="w-full px-6 py-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 transition flex items-center justify-center gap-2">
-                <span>📞</span> Place Call
-            </button>
-        </div>
-    </div>
 </body>
 
 </html>
