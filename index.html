@@ -447,9 +447,11 @@
                                 </button>
                                 <input type="file" id="imageInput" accept="image/*" class="hidden"
                                     onchange="handleImageSelect()">
-                                <input type="text" id="replyInput" placeholder="Type your message..."
-                                    class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl"
-                                    onkeypress="if(event.key==='Enter') sendReply()">
+                                <textarea id="replyInput" placeholder="Type your message..."
+                                    class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl resize-none overflow-hidden"
+                                    rows="1"
+                                    oninput="autoGrowInput(this)"
+                                    onkeypress="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendReply(); }"></textarea>
                                 <button onclick="sendReply()"
                                     class="modern-button px-6 py-3 bg-primary text-white rounded-xl font-semibold hover-primary">
                                     Send
@@ -1229,6 +1231,11 @@
             const sound = document.getElementById('notificationSound').value;
             notificationSoundPreference = sound;
             localStorage.setItem('notificationSound', sound);
+        }
+
+        function autoGrowInput(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 160) + 'px'; // max ~6 lines
         }
 
         function saveAdHocContacts() {
@@ -2164,7 +2171,9 @@
                             senderColor: currentUserColor
                         });
                     }
-                    document.getElementById('replyInput').value = '';
+                    const ri = document.getElementById('replyInput');
+                    ri.value = '';
+                    ri.style.height = 'auto';
                     clearImagePreview();
                     displayMessages();
                     updateDriverList();
@@ -2895,14 +2904,17 @@
                 localStorage.setItem('notificationSound', soundPref);
             }
 
-            // Only try to save admin settings if fields are filled
+            // Only save admin settings if the fields were explicitly unlocked by the user
+            const adminGroup = document.getElementById('adminSettingsGroup');
+            const isUnlocked = adminGroup && !adminGroup.classList.contains('pointer-events-none');
+
             const sid = document.getElementById('accountSid').value.trim();
             const token = document.getElementById('authToken').value.trim();
             const number = document.getElementById('twilioNumber').value.trim();
             const company = document.getElementById('companyNameSettings').value.trim();
 
-            // If admin fields are filled, save them (admin only)
-            if (sid || token || number || company) {
+            // If admin fields are unlocked and filled, save them (admin only)
+            if (isUnlocked && (sid || token || number || company)) {
                 if (!sid || !token || !number) {
                     alert('Please fill in all Twilio fields (SID, Token, and Number)');
                     return;
