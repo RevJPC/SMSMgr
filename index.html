@@ -1930,8 +1930,20 @@
                     // Get media URLs if present
                     const mediaUrls = [];
                     if (m.num_media && parseInt(m.num_media) > 0) {
-                        // Media fetching skipped for now as it requires another proxy endpoint
-                        // We can add /api/media-list later
+                        try {
+                            const mediaRes = await fetch(
+                                `${BACKEND_URL}/api/media-list?sid=${m.sid}`,
+                                { headers: { 'Authorization': `Basic ${auth}` } }
+                            );
+                            if (mediaRes.ok) {
+                                const mediaData = await mediaRes.json();
+                                mediaData.media_list.forEach(media => {
+                                    if (media.proxyUrl) mediaUrls.push(media.proxyUrl);
+                                });
+                            }
+                        } catch (mediaErr) {
+                            console.error('Error fetching media for message:', mediaErr);
+                        }
                     }
 
                     // Add to conversation
