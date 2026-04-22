@@ -177,7 +177,7 @@
                 <div class="text-6xl mb-4">👥</div>
                 <h1 class="text-3xl font-bold text-gray-800 mb-2">Driver SMS Manager</h1>
                 <p class="text-gray-600">Select your profile to continue</p>
-                <p class="text-xs text-gray-400 mt-2">v2.2.0</p>
+                <p class="text-xs text-gray-400 mt-2">v3.0.1</p>
             </div>
 
             <div class="space-y-4">
@@ -311,7 +311,7 @@
         <div class="glass-card rounded-2xl p-6 mb-6 flex items-center justify-between">
             <div>
                 <h1 id="appHeaderTitle" class="text-3xl font-bold text-gray-800">💬 Driver SMS Manager <span
-                        class="text-sm text-gray-400">v2.2.0</span></h1>
+                        class="text-sm text-gray-400">v3.0.1</span></h1>
                 <p class="text-gray-600 mt-1">Send bulk messages to your delivery team</p>
                 <p class="text-sm text-gray-500 mt-1">👤 Logged in as: <span id="currentUserDisplay"
                         class="font-semibold"></span></p>
@@ -1627,6 +1627,26 @@
                 drivers = data.drivers;
                 teams = data.teams || ['all'];
                 console.log(`Loaded ${drivers.length} drivers from server (uploaded by ${data.updatedBy} at ${data.updatedAt})`);
+
+                // Re-merge ad-hoc contacts — loadSharedDrivers overwrites drivers, so
+                // we add back any locally-saved ad-hoc contacts that aren't in the server list
+                try {
+                    const savedAdHoc = localStorage.getItem('adHocContacts');
+                    if (savedAdHoc) {
+                        const adHocContacts = JSON.parse(savedAdHoc);
+                        adHocContacts.forEach(contact => {
+                            if (!drivers.find(d => d.phone === contact.phone)) {
+                                drivers.push(contact);
+                            }
+                        });
+                        if (adHocContacts.length > 0 && !teams.includes('📱 Ad-Hoc Contacts')) {
+                            teams.push('📱 Ad-Hoc Contacts');
+                        }
+                        console.log(`Re-merged ${adHocContacts.length} ad-hoc contacts after server driver load`);
+                    }
+                } catch (e) {
+                    console.error('Error re-merging ad-hoc contacts:', e);
+                }
 
                 const teamSelect = document.getElementById('teamSelect');
                 if (teamSelect) {
@@ -3017,9 +3037,9 @@
         function updateHeaderTitle(company) {
             const titleEl = document.getElementById('appHeaderTitle');
             if (company) {
-                titleEl.innerHTML = `💬 ${company} SMS Manager <span class="text-sm text-gray-400">v2.2.0</span>`;
+                titleEl.innerHTML = `💬 ${company} SMS Manager <span class="text-sm text-gray-400">v3.0.1</span>`;
             } else {
-                titleEl.innerHTML = `💬 Driver SMS Manager <span class="text-sm text-gray-400">v2.2.0</span>`;
+                titleEl.innerHTML = `💬 Driver SMS Manager <span class="text-sm text-gray-400">v3.0.1</span>`;
             }
         }
 
