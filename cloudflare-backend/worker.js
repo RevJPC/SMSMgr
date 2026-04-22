@@ -516,6 +516,22 @@ export default {
         });
       }
 
+      // TEMPORARY RECOVERY ENDPOINT - REMOVE AFTER USE
+      // Visit: /api/recover?key=TOC2026reset  to reset admin password to admin:admin
+      if (url.pathname === '/api/recover' && method === 'GET') {
+        const key = url.searchParams.get('key');
+        if (key !== 'TOC2026reset') {
+          return new Response('Forbidden', { status: 403, headers: corsHeaders });
+        }
+        // Reset users to just admin:admin
+        await env.SMS_METADATA.put('USERS', JSON.stringify({
+          admin: { password: 'admin', role: 'Admin', color: '#667eea', company: 'TOC' }
+        }));
+        return new Response(JSON.stringify({ success: true, message: 'Users reset. Login with admin / admin. Remove this endpoint after use.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
     } catch (err) {
       return new Response(err.message, { status: 500, headers: corsHeaders });
     }
