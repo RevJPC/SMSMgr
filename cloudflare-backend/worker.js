@@ -528,10 +528,10 @@ export default {
           return new Response(JSON.stringify({ error: 'File too large (max 5MB)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
 
-        // Generate a unique key and store in KV with 24hr expiry
+        // Generate a unique key and store in KV with 7-day expiry
         const mediaKey = 'MEDIA_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
         await env.SMS_METADATA.put(mediaKey, bytes, {
-          expirationTtl: 86400, // 24 hours
+          expirationTtl: 604800, // 7 days
           metadata: { contentType: file.type }
         });
 
