@@ -1912,15 +1912,54 @@
                     conversations[phone] = [];
                 }
 
-                // Filter out messages we already have to avoid re-processing
+                // Split into truly new messages vs existing ones that may be missing media
                 const trulyNewMessages = newMessages.filter(m => !conversations[phone].find(existing => existing.sid === m.sid));
+                // Messages already in cache but Twilio says have media and cache has none
+                const needsMediaPatch = newMessages.filter(m => {
+                    const cached = conversations[phone].find(existing => existing.sid === m.sid);
+                    return cached && parseInt(m.num_media) > 0 && (!cached.media || cached.media.length === 0);
+                });
+
+                console.log(`Found ${trulyNewMessages.length} new messages, ${needsMediaPatch.length} needing media patch`);
+
+                // Patch existing cached messages that are missing media
+                for (const m of needsMediaPatch) {
+                    try {
+                        const mediaRes = await fetch(
+                            `${BACKEND_URL}/api/media-list?sid=${m.sid}`,
+                            { headers: { 'Authorization': `Basic ${auth}` } }
+                        );
+                        if (mediaRes.ok) {
+                            const mediaData = await mediaRes.json();
+                            const urls = mediaData.media_list
+                                .filter(med => med.proxyUrl)
+                                .map(med => med.proxyUrl);
+                            if (urls.length > 0) {
+                                // Update the cached entry in-place
+                                const cached = conversations[phone].find(existing => existing.sid === m.sid);
+                                if (cached) {
+                                    cached.media = urls;
+                                    if (!cached.body || cached.body === '') cached.body = '📷 Image';
+                                    console.log(`Patched media for ${m.sid}:`, urls);
+                                }
+                            }
+                        }
+                    } catch (mediaErr) {
+                        console.error('Error patching media for message:', m.sid, mediaErr);
+                    }
+                }
+
+                if (trulyNewMessages.length === 0 && needsMediaPatch.length > 0) {
+                    // Only had patches — save cache and re-render so images appear
+                    saveCachedConversations();
+                    if (currentDriver && currentDriver.phone === phone) displayMessages();
+                    return;
+                }
 
                 if (trulyNewMessages.length === 0) {
                     console.log('No new messages found');
                     return;
                 }
-
-                console.log(`Found ${trulyNewMessages.length} new messages`);
 
                 // Fetch metadata for new messages
                 await enrichMessagesWithMetadata(trulyNewMessages);
