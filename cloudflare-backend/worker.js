@@ -656,6 +656,51 @@ export default {
         });
       }
 
+      // Make Call Proxy
+      if (url.pathname === '/api/call' && method === 'POST') {
+        const currentUser = await authenticate(request);
+        if (!currentUser) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+
+        const { userPhone, driverPhone } = await request.json();
+
+        // Get credentials
+        const settingsJson = await env.SMS_METADATA.get('SMS_SETTINGS');
+        if (!settingsJson) return new Response('System not configured', { status: 500, headers: corsHeaders });
+        const { sid, token, number } = JSON.parse(settingsJson);
+        if (!sid || !token || !number) return new Response('Missing Twilio configuration', { status: 500, headers: corsHeaders });
+
+        const cleanSid = String(sid).trim();
+        const cleanToken = String(token).trim();
+        const authHeader = 'Basic ' + base64Encode(`${cleanSid}:${cleanToken}`);
+
+        const formData = new URLSearchParams();
+        formData.append('To', userPhone);
+        formData.append('From', number);
+        formData.append('Twiml', `<Response><Say>Connecting</Say><Dial callerId="${number}">${driverPhone}</Dial></Response>`);
+
+        const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${cleanSid}/Calls.json`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': authHeader
+          },
+          body: formData
+        });
+
+        const twilioData = await twilioRes.json();
+
+        if (!twilioRes.ok) {
+          return new Response(JSON.stringify({ error: twilioData.message || 'Twilio Error' }), {
+            status: twilioRes.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        return new Response(JSON.stringify(twilioData), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
     } catch (err) {
       return new Response(err.message, { status: 500, headers: corsHeaders });
     }
