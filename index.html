@@ -2116,7 +2116,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Basic ${btoa(currentUser + ':' + currentPass)}`
+                        'Authorization': `Basic ${auth}`
                     },
                     body: JSON.stringify({
                         userPhone: userPhone,
