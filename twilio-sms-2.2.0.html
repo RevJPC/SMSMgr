@@ -431,10 +431,16 @@
                                 <h2 class="text-xl font-bold text-gray-800" id="convName"></h2>
                                 <p class="text-sm text-gray-600" id="convPhone"></p>
                             </div>
-                            <button onclick="closeConversation()"
-                                class="modern-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
-                                ✕ Close
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="makeCall()"
+                                    class="modern-button px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600">
+                                    📞 Call
+                                </button>
+                                <button onclick="closeConversation()"
+                                    class="modern-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
+                                    ✕ Close
+                                </button>
+                            </div>
                         </div>
                         <div id="messageThread" class="bg-gray-50 rounded-xl p-4 mb-4 space-y-3 flex-1 overflow-y-auto"
                             style="min-height: 0;"></div>
@@ -1780,7 +1786,18 @@
         }
 
         function getLastMessagePreview(phone) {
-            const msgs = conversations[phone] || [];
+            let msgs = conversations[phone] || [];
+            
+            const hideBulk = document.getElementById('hideBulkToggle')?.checked;
+            const myMessagesOnly = document.getElementById('myMessagesToggle')?.checked;
+            
+            if (hideBulk) {
+                msgs = msgs.filter(m => !m.isBulk);
+            }
+            if (myMessagesOnly && currentUser) {
+                msgs = msgs.filter(m => m.direction === 'inbound' || m.senderName === currentUser);
+            }
+
             if (msgs.length === 0) return { text: 'No messages yet', time: '' };
 
             const lastMsg = msgs.reduce((latest, msg) => {
@@ -2049,6 +2066,66 @@
             document.getElementById('emptyState').classList.remove('hidden');
         }
 
+        async function makeCall() {
+            if (!currentDriver) return;
+            
+            let userPhone = localStorage.getItem('myPhone');
+            if (!userPhone) {
+                userPhone = prompt('Please enter your phone number to initiate the call (e.g., +1234567890):');
+                if (!userPhone) return;
+                localStorage.setItem('myPhone', userPhone);
+            } else {
+                // Confirm or let them change? Let's just ask if they want to change if it fails, or maybe just use it.
+                // It's probably fine to just use it. If they need to change it, they can clear localStorage.
+                // Wait, it would be better to ask via a prompt with the default value.
+                const confirmedPhone = prompt('Initiate call to this number?', userPhone);
+                if (!confirmedPhone) return;
+                userPhone = confirmedPhone;
+                localStorage.setItem('myPhone', userPhone);
+            }
+
+            try {
+                const btn = event?.currentTarget || document.querySelector('button[onclick="makeCall()"]');
+                const originalText = btn ? btn.innerHTML : '📞 Call';
+                if (btn) {
+                    btn.innerHTML = '📞 Calling...';
+                    btn.disabled = true;
+                }
+
+                const response = await fetch(`${API_URL}/call`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${btoa(currentUser + ':' + currentPass)}`
+                    },
+                    body: JSON.stringify({
+                        userPhone: userPhone,
+                        driverPhone: currentDriver.phone
+                    })
+                });
+
+                if (btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.error || 'Failed to initiate call');
+                }
+
+                alert(`Call initiated! Expect a call on ${userPhone} shortly.`);
+
+            } catch (err) {
+                alert(`Error making call: ${err.message}`);
+                const btn = document.querySelector('button[onclick="makeCall()"]');
+                if (btn) {
+                    btn.innerHTML = '📞 Call';
+                    btn.disabled = false;
+                }
+            }
+        }
+
         async function getAuthenticatedMediaUrl(mediaUrl) {
             // If it's not a Twilio URL, return as-is (e.g., ImgBB URLs don't need auth)
             if (!mediaUrl.includes('api.twilio.com')) {
@@ -2105,6 +2182,7 @@
 
             const msgs = conversations[targetDriver.phone] || [];
             const hideBulk = document.getElementById('hideBulkToggle')?.checked;
+            const myMessagesOnly = document.getElementById('myMessagesToggle')?.checked;
 
             if (msgs.length === 0) {
                 thread.innerHTML = '<p class="text-center text-gray-500 text-sm">No messages yet</p>';
@@ -2114,7 +2192,13 @@
             // Filter messages if needed
             let displayMsgs = msgs;
             if (hideBulk) {
-                displayMsgs = msgs.filter(m => !m.isBulk);
+                displayMsgs = displayMsgs.filter(m => !m.isBulk);
+            }
+            if (myMessagesOnly && currentUser) {
+                displayMsgs = displayMsgs.filter(m => {
+                    // Include inbound messages, or outbound messages sent by currentUser
+                    return m.direction === 'inbound' || m.senderName === currentUser;
+                });
             }
 
             if (displayMsgs.length === 0) {
@@ -2881,7 +2965,9 @@
 
         function updateBulkList() {
             const team = document.getElementById('bulkTeamSelect').value;
-            const filtered = team === 'all' ? drivers : drivers.filter(d => d.team === team);
+            const filtered = team === 'all' ? drivers.slice() : drivers.filter(d => d.team === team);
+
+            filtered.sort((a, b) => a.name.localeCompare(b.name));
 
             selectedDriverIds.clear();
             filtered.forEach(d => selectedDriverIds.add(d.id));
