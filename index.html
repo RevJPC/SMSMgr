@@ -2111,6 +2111,8 @@
                     btn.innerHTML = '📞 Calling...';
                     btn.disabled = true;
                 }
+                
+                const auth = sessionStorage.getItem('auth');
 
                 const response = await fetch(`${BACKEND_URL}/api/call`, {
                     method: 'POST',
